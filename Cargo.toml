@@ -1,0 +1,32 @@
+[workspace]
+members = ["crates/*"]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.88"
+publish = false
+
+[workspace.dependencies]
+openriver_domain = { path = "crates/openriver_domain" }
+openriver_parser = { path = "crates/openriver_parser" }
+openriver_storage = { path = "crates/openriver_storage" }
+openriver_analytics = { path = "crates/openriver_analytics" }
+serde = { version = "1.0", features = ["derive"] }
+thiserror = "2.0"
+sqlx = { version = "0.8.6", default-features = false, features = ["runtime-tokio", "sqlite", "migrate", "macros"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+flutter_rust_bridge = "=2.12.0"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+all = "warn"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "debuginfo"
+

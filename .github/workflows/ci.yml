@@ -1,0 +1,108 @@
+name: OpenRiver CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.88.0
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.41.2
+          channel: stable
+          cache: true
+      - run: flutter pub get --enforce-lockfile
+      - run: dart run melos run check
+      - name: Install pinned bridge tools
+        run: |
+          cargo install flutter_rust_bridge_codegen --version 2.12.0 --locked
+          cargo install cargo-expand --version 1.0.126 --locked
+      - name: Verify generated bindings are current
+        run: |
+          dart run melos run bridge:generate
+          cargo fmt --all
+          git diff --exit-code -- crates/openriver_bridge/src packages/openriver_api/lib/src/rust packages/openriver_api/ios/Classes
+
+  desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            target: linux
+          - os: macos-14
+            target: macos
+          - os: windows-2022
+            target: windows
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.88.0
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.41.2
+          channel: stable
+          cache: true
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev xvfb
+      - run: flutter pub get --enforce-lockfile
+      - run: cargo test --workspace --locked
+      - run: dart run melos run build:${{ matrix.target }}
+      - name: Packaged core smoke test
+        if: runner.os != 'Linux'
+        working-directory: apps/openriver
+        run: flutter test integration_test/core_smoke_test.dart -d ${{ matrix.target }}
+      - name: Packaged core smoke test (Linux virtual display)
+        if: runner.os == 'Linux'
+        working-directory: apps/openriver
+        run: xvfb-run -a flutter test integration_test/core_smoke_test.dart -d linux
+
+  mobile:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            target: android
+          - os: macos-15
+            target: ios
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.88.0
+      - uses: actions/setup-java@v4
+        if: matrix.target == 'android'
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        if: matrix.target == 'android'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.41.2
+          channel: stable
+          cache: true
+      - run: flutter pub get --enforce-lockfile
+      - run: dart run melos run build:${{ matrix.target }}

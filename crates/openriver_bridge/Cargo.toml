@@ -1,0 +1,23 @@
+[package]
+name = "openriver_bridge"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[lib]
+crate-type = ["cdylib", "staticlib", "rlib"]
+
+[dependencies]
+flutter_rust_bridge.workspace = true
+openriver_storage.workspace = true
+
+# Generated FFI glue uses unsafe code; domain/storage crates forbid it.
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(frb_expand)'] }
+
+# libc 0.2.190 hides dyld APIs on iOS, breaking backtrace 0.3.76 via FRB.
+# Remove this constraint after https://github.com/rust-lang/libc/issues/5601
+# is resolved and iOS device/simulator builds pass with the replacement.
+[target.'cfg(target_os = "ios")'.dependencies]
+libc = "=0.2.189"

@@ -1,0 +1,77 @@
+name: openriver_workspace
+publish_to: none
+environment:
+  sdk: ^3.11.0
+workspace:
+  - apps/openriver
+  - packages/openriver_api
+dev_dependencies:
+  melos: 8.2.1
+  flutter_lints: 6.0.0
+
+# Melos 8 configuration lives here, alongside the Dart workspace.
+melos:
+  scripts:
+    analyze:
+      exec:
+        command: flutter analyze
+        concurrency: 1
+    test:
+      exec:
+        command: flutter test
+        concurrency: 1
+      packageFilters:
+        dirExists: test
+    format:
+      run: dart format apps/openriver/lib apps/openriver/test apps/openriver/integration_test packages/openriver_api/lib && cargo fmt --all
+    format:check:
+      run: dart format --output=none --set-exit-if-changed apps/openriver/lib apps/openriver/test apps/openriver/integration_test packages/openriver_api/lib && cargo fmt --all -- --check
+    rust:test:
+      run: cargo test --workspace --locked
+    rust:lint:
+      run: cargo clippy --workspace --all-targets --locked -- -D warnings
+    bridge:generate:
+      run: flutter_rust_bridge_codegen generate --config-file flutter_rust_bridge.yaml
+    check:
+      steps:
+        - format:check
+        - analyze
+        - test
+        - rust:lint
+        - rust:test
+    run:macos:
+      exec:
+        command: flutter run -d macos
+        concurrency: 1
+      packageFilters:
+        scope: openriver
+    build:macos:
+      exec:
+        command: flutter build macos
+        concurrency: 1
+      packageFilters:
+        scope: openriver
+    build:linux:
+      exec:
+        command: flutter build linux
+        concurrency: 1
+      packageFilters:
+        scope: openriver
+    build:windows:
+      exec:
+        command: flutter build windows
+        concurrency: 1
+      packageFilters:
+        scope: openriver
+    build:android:
+      exec:
+        command: flutter build apk --debug
+        concurrency: 1
+      packageFilters:
+        scope: openriver
+    build:ios:
+      exec:
+        command: flutter build ios --simulator
+        concurrency: 1
+      packageFilters:
+        scope: openriver

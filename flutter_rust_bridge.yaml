@@ -1,0 +1,8 @@
+rust_input: crate::api
+rust_root: crates/openriver_bridge/
+dart_output: packages/openriver_api/lib/src/rust
+dart_root: packages/openriver_api/
+rust_output: crates/openriver_bridge/src/frb_generated.rs
+c_output: packages/openriver_api/ios/Classes/frb_generated.h
+web: false
+dart_format_line_length: 80

@@ -1,0 +1,12 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "OpenRiver",
+      "request": "launch",
+      "type": "dart",
+      "cwd": "apps/openriver",
+      "program": "lib/main.dart"
+    }
+  ]
+}
