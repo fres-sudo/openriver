@@ -11,6 +11,8 @@ crate-type = ["cdylib", "staticlib", "rlib"]
 [dependencies]
 flutter_rust_bridge.workspace = true
 openriver_storage.workspace = true
+openriver_parser.workspace = true
+sha2 = "0.10"
 
 # Generated FFI glue uses unsafe code; domain/storage crates forbid it.
 [lints.rust]

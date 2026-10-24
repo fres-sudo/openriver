@@ -66,7 +66,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.12.0';
 
   @override
-  int get rustContentHash => -1123649245;
+  int get rustContentHash => -1692660307;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -78,11 +78,18 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
 }
 
 abstract class RustLibApi extends BaseApi {
+  Future<ImportSummary> crateApiLibraryImportHandHistory({
+    required String databasePath,
+    required String filePath,
+  });
+
   Future<void> crateApiLibraryInitApp();
 
   Future<CoreStatus> crateApiLibraryInitializeLibrary({
     required String databasePath,
   });
+
+  Future<int> crateApiLibraryStoredHandCount({required String databasePath});
 }
 
 class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
@@ -94,6 +101,41 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   });
 
   @override
+  Future<ImportSummary> crateApiLibraryImportHandHistory({
+    required String databasePath,
+    required String filePath,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(databasePath, serializer);
+          sse_encode_String(filePath, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 1,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_import_summary,
+          decodeErrorData: sse_decode_core_error,
+        ),
+        constMeta: kCrateApiLibraryImportHandHistoryConstMeta,
+        argValues: [databasePath, filePath],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiLibraryImportHandHistoryConstMeta =>
+      const TaskConstMeta(
+        debugName: "import_hand_history",
+        argNames: ["databasePath", "filePath"],
+      );
+
+  @override
   Future<void> crateApiLibraryInitApp() {
     return handler.executeNormal(
       NormalTask(
@@ -102,7 +144,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 1,
+            funcId: 2,
             port: port_,
           );
         },
@@ -132,7 +174,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 2,
+            funcId: 3,
             port: port_,
           );
         },
@@ -150,6 +192,37 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   TaskConstMeta get kCrateApiLibraryInitializeLibraryConstMeta =>
       const TaskConstMeta(
         debugName: "initialize_library",
+        argNames: ["databasePath"],
+      );
+
+  @override
+  Future<int> crateApiLibraryStoredHandCount({required String databasePath}) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(databasePath, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 4,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_u_32,
+          decodeErrorData: sse_decode_core_error,
+        ),
+        constMeta: kCrateApiLibraryStoredHandCountConstMeta,
+        argValues: [databasePath],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiLibraryStoredHandCountConstMeta =>
+      const TaskConstMeta(
+        debugName: "stored_hand_count",
         argNames: ["databasePath"],
       );
 
@@ -184,9 +257,52 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  ImportDiagnostic dco_decode_import_diagnostic(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return ImportDiagnostic(
+      sourceHandId: dco_decode_opt_String(arr[0]),
+      startLine: dco_decode_u_32(arr[1]),
+      endLine: dco_decode_u_32(arr[2]),
+      code: dco_decode_String(arr[3]),
+    );
+  }
+
+  @protected
+  ImportSummary dco_decode_import_summary(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 7)
+      throw Exception('unexpected arr length: expect 7 but see ${arr.length}');
+    return ImportSummary(
+      parsed: dco_decode_u_32(arr[0]),
+      imported: dco_decode_u_32(arr[1]),
+      duplicates: dco_decode_u_32(arr[2]),
+      rejected: dco_decode_u_32(arr[3]),
+      parserVersion: dco_decode_String(arr[4]),
+      diagnostics: dco_decode_list_import_diagnostic(arr[5]),
+      storedHandCount: dco_decode_u_32(arr[6]),
+    );
+  }
+
+  @protected
+  List<ImportDiagnostic> dco_decode_list_import_diagnostic(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_import_diagnostic).toList();
+  }
+
+  @protected
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as Uint8List;
+  }
+
+  @protected
+  String? dco_decode_opt_String(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_String(raw);
   }
 
   @protected
@@ -239,10 +355,71 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  ImportDiagnostic sse_decode_import_diagnostic(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_sourceHandId = sse_decode_opt_String(deserializer);
+    var var_startLine = sse_decode_u_32(deserializer);
+    var var_endLine = sse_decode_u_32(deserializer);
+    var var_code = sse_decode_String(deserializer);
+    return ImportDiagnostic(
+      sourceHandId: var_sourceHandId,
+      startLine: var_startLine,
+      endLine: var_endLine,
+      code: var_code,
+    );
+  }
+
+  @protected
+  ImportSummary sse_decode_import_summary(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_parsed = sse_decode_u_32(deserializer);
+    var var_imported = sse_decode_u_32(deserializer);
+    var var_duplicates = sse_decode_u_32(deserializer);
+    var var_rejected = sse_decode_u_32(deserializer);
+    var var_parserVersion = sse_decode_String(deserializer);
+    var var_diagnostics = sse_decode_list_import_diagnostic(deserializer);
+    var var_storedHandCount = sse_decode_u_32(deserializer);
+    return ImportSummary(
+      parsed: var_parsed,
+      imported: var_imported,
+      duplicates: var_duplicates,
+      rejected: var_rejected,
+      parserVersion: var_parserVersion,
+      diagnostics: var_diagnostics,
+      storedHandCount: var_storedHandCount,
+    );
+  }
+
+  @protected
+  List<ImportDiagnostic> sse_decode_list_import_diagnostic(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <ImportDiagnostic>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_import_diagnostic(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
   Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var len_ = sse_decode_i_32(deserializer);
     return deserializer.buffer.getUint8List(len_);
+  }
+
+  @protected
+  String? sse_decode_opt_String(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_String(deserializer));
+    } else {
+      return null;
+    }
   }
 
   @protected
@@ -294,6 +471,42 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_import_diagnostic(
+    ImportDiagnostic self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_opt_String(self.sourceHandId, serializer);
+    sse_encode_u_32(self.startLine, serializer);
+    sse_encode_u_32(self.endLine, serializer);
+    sse_encode_String(self.code, serializer);
+  }
+
+  @protected
+  void sse_encode_import_summary(ImportSummary self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_u_32(self.parsed, serializer);
+    sse_encode_u_32(self.imported, serializer);
+    sse_encode_u_32(self.duplicates, serializer);
+    sse_encode_u_32(self.rejected, serializer);
+    sse_encode_String(self.parserVersion, serializer);
+    sse_encode_list_import_diagnostic(self.diagnostics, serializer);
+    sse_encode_u_32(self.storedHandCount, serializer);
+  }
+
+  @protected
+  void sse_encode_list_import_diagnostic(
+    List<ImportDiagnostic> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_import_diagnostic(item, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_list_prim_u_8_strict(
     Uint8List self,
     SseSerializer serializer,
@@ -301,6 +514,16 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_i_32(self.length, serializer);
     serializer.buffer.putUint8List(self);
+  }
+
+  @protected
+  void sse_encode_opt_String(String? self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_String(self, serializer);
+    }
   }
 
   @protected

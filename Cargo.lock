@@ -987,7 +987,9 @@ version = "0.1.0"
 dependencies = [
  "flutter_rust_bridge",
  "libc",
+ "openriver_parser",
  "openriver_storage",
+ "sha2",
 ]
 
 [[package]]
@@ -1002,6 +1004,9 @@ dependencies = [
 name = "openriver_parser"
 version = "0.1.0"
 dependencies = [
+ "openriver_domain",
+ "serde",
+ "sha2",
  "thiserror",
 ]
 
@@ -1009,6 +1014,9 @@ dependencies = [
 name = "openriver_storage"
 version = "0.1.0"
 dependencies = [
+ "openriver_domain",
+ "openriver_parser",
+ "serde_json",
  "sqlx",
  "tempfile",
  "thiserror",

@@ -1,8 +1,10 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:openriver/app/openriver_app.dart';
+import 'package:openriver/features/library/library_cubit.dart';
 import 'package:openriver_api/openriver_api.dart';
 import 'package:path/path.dart' as path;
 
@@ -21,7 +23,7 @@ void main() {
     final first = await core.initializeLibrary(database);
     final reopened = await core.initializeLibrary(database);
     expect(first.coreVersion, '0.1.0');
-    expect(reopened.schemaVersion, 1);
+    expect(reopened.schemaVersion, 2);
     expect(await File(database).exists(), isTrue);
     await expectLater(
       core.initializeLibrary(
@@ -35,6 +37,36 @@ void main() {
         ),
       ),
     );
+    final history = File(path.join(directory.path, 'synthetic.txt'));
+    await history.writeAsString(
+      '''PokerStars Hand #2001: Hold'em No Limit (\$0.01/\$0.02 USD) - 2026/10/23 12:01:00 UTC
+Table 'Example' 6-max Seat #1 is the button
+Seat 1: Ada (\$1.00 in chips)
+Seat 2: Bo (\$1.00 in chips)
+Ada: posts small blind \$0.01
+Bo: posts big blind \$0.02
+*** HOLE CARDS ***
+Ada: calls \$0.01
+Bo: checks
+*** FLOP *** [2c 7d 9h]
+Ada: bets \$0.02
+Bo: folds
+Uncalled bet (\$0.02) returned to Ada
+Ada collected \$0.04 from pot
+*** SUMMARY ***
+Total pot \$0.04 | Rake \$0.00
+Seat 1: Ada collected \$0.04
+''',
+    );
+    final imported = await core.importHandHistory(database, history.path);
+    expect(
+      (imported.imported, imported.rejected, imported.storedHandCount),
+      (1, 0, 1),
+    );
+    await core.initializeLibrary(database);
+    expect(await core.storedHandCount(database), 1);
+    final repeated = await core.importHandHistory(database, history.path);
+    expect((repeated.imported, repeated.duplicates), (0, 1));
 
     await tester.pumpWidget(
       OpenRiverApp(core: core, databasePath: () async => database),
@@ -47,5 +79,22 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
     }
     expect(find.text('Your library is ready'), findsOneWidget);
+    final template = await history.readAsString();
+    final batch = File(path.join(directory.path, 'synthetic-10k.txt'));
+    await batch.writeAsString(
+      List.generate(
+        10000,
+        (i) => template.replaceFirst('Hand #2001', 'Hand #${10000 + i}'),
+      ).join('\n'),
+    );
+    final cubit = tester
+        .element(find.text('Import hand history'))
+        .read<LibraryCubit>();
+    final importing = cubit.importPath(batch.path);
+    await tester.pump();
+    expect(find.text('Importing hands…'), findsOneWidget);
+    await importing;
+    await tester.pump();
+    expect(find.text('10001 stored hands'), findsOneWidget);
   });
 }

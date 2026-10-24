@@ -1,21 +1,112 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:openriver/app/openriver_app.dart';
 import 'package:openriver/features/library/library_cubit.dart';
 import 'package:openriver_api/openriver_api.dart';
 
 class FakeCore implements OpenRiverCore {
-  FakeCore(this.open);
+  FakeCore(this.open, {this.import});
   final Future<LibraryInfo> Function() open;
+  final Future<HandImportReport> Function()? import;
   @override
   Future<LibraryInfo> initializeLibrary(String databasePath) => open();
+  @override
+  Future<int> storedHandCount(String databasePath) async => 0;
+  @override
+  Future<HandImportReport> importHandHistory(
+    String databasePath,
+    String filePath,
+  ) async =>
+      import?.call() ??
+      const HandImportReport(
+        parsed: 0,
+        imported: 0,
+        duplicates: 0,
+        rejected: 0,
+        storedHandCount: 0,
+        diagnostics: [],
+      );
 }
 
-const info = LibraryInfo(coreVersion: '0.1.0', schemaVersion: 1);
+const info = LibraryInfo(coreVersion: '0.1.0', schemaVersion: 2);
 
 void main() {
+  testWidgets('partial import shows counts and rejected hand reason', (
+    tester,
+  ) async {
+    final core = FakeCore(
+      () async => info,
+      import: () async => const HandImportReport(
+        parsed: 2,
+        imported: 1,
+        duplicates: 0,
+        rejected: 1,
+        storedHandCount: 1,
+        diagnostics: [
+          HandImportDiagnostic(
+            handId: '1003',
+            startLine: 17,
+            endLine: 24,
+            code: 'IncompleteHand',
+          ),
+        ],
+      ),
+    );
+    await tester.pumpWidget(
+      OpenRiverApp(core: core, databasePath: () async => 'test.sqlite3'),
+    );
+    await tester.pumpAndSettle();
+    await tester
+        .element(find.text('Import hand history'))
+        .read<LibraryCubit>()
+        .importPath('synthetic.txt');
+    await tester.pumpAndSettle();
+    expect(find.text('1 stored hands'), findsOneWidget);
+    expect(find.text('Imported 1, duplicates 0, rejected 1.'), findsOneWidget);
+    expect(find.textContaining('IncompleteHand'), findsOneWidget);
+  });
+
+  testWidgets('unsupported input can retry without exposing its path', (
+    tester,
+  ) async {
+    var attempts = 0;
+    final core = FakeCore(
+      () async => info,
+      import: () async {
+        if (++attempts == 1) {
+          throw const CoreException(CoreFailure.unsupportedFormat);
+        }
+        return const HandImportReport(
+          parsed: 1,
+          imported: 1,
+          duplicates: 0,
+          rejected: 0,
+          storedHandCount: 1,
+          diagnostics: [],
+        );
+      },
+    );
+    await tester.pumpWidget(
+      OpenRiverApp(core: core, databasePath: () async => 'test.sqlite3'),
+    );
+    await tester.pumpAndSettle();
+    final cubit = tester
+        .element(find.text('Import hand history'))
+        .read<LibraryCubit>();
+    await cubit.importPath('/private/player/history.txt');
+    await tester.pumpAndSettle();
+    expect(
+      find.text('This hand-history format is not supported yet.'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('/private/player'), findsNothing);
+    await cubit.importPath('/private/player/history.txt');
+    await tester.pumpAndSettle();
+    expect(find.text('1 stored hands'), findsOneWidget);
+  });
   testWidgets('opening a library shows progress then ready', (tester) async {
     final completion = Completer<LibraryInfo>();
     await tester.pumpWidget(

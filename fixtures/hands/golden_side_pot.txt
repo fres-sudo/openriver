@@ -1,0 +1,27 @@
+PokerStars Hand #1001: Hold'em No Limit ($0.01/$0.02 USD) - 2026/10/23 12:00:00 UTC
+Table 'Example' 6-max Seat #1 is the button
+Seat 1: Ada ($1.00 in chips)
+Seat 2: Bo ($2.00 in chips)
+Seat 3: Cy ($3.00 in chips)
+Ada: posts small blind $0.01
+Bo: posts big blind $0.02
+*** HOLE CARDS ***
+Cy: raises $2.98 to $3.00 and is all-in
+Ada: calls $0.99 and is all-in
+Bo: calls $1.98 and is all-in
+Uncalled bet ($1.00) returned to Cy
+*** FLOP *** [2c 7d 9h]
+*** TURN *** [2c 7d 9h] [Js]
+*** RIVER *** [2c 7d 9h Js] [3c]
+*** SHOW DOWN ***
+Cy: shows [Qs Qh] (a pair of Queens)
+Ada: shows [As Ah] (a pair of Aces)
+Bo: shows [Kc Kd] (a pair of Kings)
+Ada collected $3.00 from main pot
+Bo collected $2.00 from side pot
+*** SUMMARY ***
+Total pot $5.00 | Rake $0.00
+Main pot $3.00 won by Ada
+Side pot $2.00 won by Bo
+Seat 1: Ada collected $3.00
+Seat 2: Bo collected $2.00

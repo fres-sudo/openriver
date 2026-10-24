@@ -1,0 +1,7 @@
+# Initial room policy and format review — 2026-10-23
+
+**Product decision:** Keep the adapter labeled `synthetic-stars-like`. Do not advertise support for live PokerStars exports yet. No real export sample or specific client/language/version variant was reviewed, so format compatibility is unverified.
+
+PokerStars' [hand-history help](https://www.pokerstars.com/help/articles/save-hand-histories/) says players can save their own histories as desktop text files and use third-party tools for advanced filtering and analysis. Its [third-party tools policy](https://www.pokerstars.com/poker/room/prohibited/) prohibits real-time action advice, datamining hands from games one did not play, and mass sharing of hands or statistics to analyze opponents. The narrow user flow planned here—manual post-session import of a player's own file into a local library, with no live table assistance or sharing—appears consistent with those published descriptions. This is an inference from public pages, not a room approval or a determination for every jurisdiction.
+
+The parser currently recognizes the synthetic English USD NLHE cash examples in `fixtures/hands`. It has not been compared with a lawfully usable real export, and no real hand history belongs in the repository without redistribution rights. Before advertising compatibility, obtain a permitted sample, record the room/client export variant and date, test expected events and payouts, and recheck the applicable local room policy.

@@ -38,7 +38,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.12.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -1123649245;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -1692660307;
 
 // Section: executor
 
@@ -46,6 +46,47 @@ flutter_rust_bridge::frb_generated_default_handler!();
 
 // Section: wire_funcs
 
+fn wire__crate__api__library__import_hand_history_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "import_hand_history",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_database_path = <String>::sse_decode(&mut deserializer);
+            let api_file_path = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::api::library::CoreError>(
+                    (move || async move {
+                        let output_ok = crate::api::library::import_hand_history(
+                            api_database_path,
+                            api_file_path,
+                        )
+                        .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
 fn wire__crate__api__library__init_app_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -117,6 +158,43 @@ fn wire__crate__api__library__initialize_library_impl(
         },
     )
 }
+fn wire__crate__api__library__stored_hand_count_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "stored_hand_count",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_database_path = <String>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::api::library::CoreError>(
+                    (move || async move {
+                        let output_ok =
+                            crate::api::library::stored_hand_count(api_database_path).await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
 
 // Section: dart2rust
 
@@ -136,6 +214,9 @@ impl SseDecode for crate::api::library::CoreError {
             0 => crate::api::library::CoreError::DatabaseUnavailable,
             1 => crate::api::library::CoreError::MigrationFailed,
             2 => crate::api::library::CoreError::IncompatibleSchema,
+            3 => crate::api::library::CoreError::FileUnavailable,
+            4 => crate::api::library::CoreError::InvalidSource,
+            5 => crate::api::library::CoreError::UnsupportedFormat,
             _ => unreachable!("Invalid variant for CoreError: {}", inner),
         };
     }
@@ -160,6 +241,59 @@ impl SseDecode for i32 {
     }
 }
 
+impl SseDecode for crate::api::library::ImportDiagnostic {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_sourceHandId = <Option<String>>::sse_decode(deserializer);
+        let mut var_startLine = <u32>::sse_decode(deserializer);
+        let mut var_endLine = <u32>::sse_decode(deserializer);
+        let mut var_code = <String>::sse_decode(deserializer);
+        return crate::api::library::ImportDiagnostic {
+            source_hand_id: var_sourceHandId,
+            start_line: var_startLine,
+            end_line: var_endLine,
+            code: var_code,
+        };
+    }
+}
+
+impl SseDecode for crate::api::library::ImportSummary {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_parsed = <u32>::sse_decode(deserializer);
+        let mut var_imported = <u32>::sse_decode(deserializer);
+        let mut var_duplicates = <u32>::sse_decode(deserializer);
+        let mut var_rejected = <u32>::sse_decode(deserializer);
+        let mut var_parserVersion = <String>::sse_decode(deserializer);
+        let mut var_diagnostics =
+            <Vec<crate::api::library::ImportDiagnostic>>::sse_decode(deserializer);
+        let mut var_storedHandCount = <u32>::sse_decode(deserializer);
+        return crate::api::library::ImportSummary {
+            parsed: var_parsed,
+            imported: var_imported,
+            duplicates: var_duplicates,
+            rejected: var_rejected,
+            parser_version: var_parserVersion,
+            diagnostics: var_diagnostics,
+            stored_hand_count: var_storedHandCount,
+        };
+    }
+}
+
+impl SseDecode for Vec<crate::api::library::ImportDiagnostic> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(<crate::api::library::ImportDiagnostic>::sse_decode(
+                deserializer,
+            ));
+        }
+        return ans_;
+    }
+}
+
 impl SseDecode for Vec<u8> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -169,6 +303,17 @@ impl SseDecode for Vec<u8> {
             ans_.push(<u8>::sse_decode(deserializer));
         }
         return ans_;
+    }
+}
+
+impl SseDecode for Option<String> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<String>::sse_decode(deserializer));
+        } else {
+            return None;
+        }
     }
 }
 
@@ -207,8 +352,10 @@ fn pde_ffi_dispatcher_primary_impl(
 ) {
     // Codec=Pde (Serialization + dispatch), see doc to use other codecs
     match func_id {
-        1 => wire__crate__api__library__init_app_impl(port, ptr, rust_vec_len, data_len),
-        2 => wire__crate__api__library__initialize_library_impl(port, ptr, rust_vec_len, data_len),
+        1 => wire__crate__api__library__import_hand_history_impl(port, ptr, rust_vec_len, data_len),
+        2 => wire__crate__api__library__init_app_impl(port, ptr, rust_vec_len, data_len),
+        3 => wire__crate__api__library__initialize_library_impl(port, ptr, rust_vec_len, data_len),
+        4 => wire__crate__api__library__stored_hand_count_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -234,6 +381,9 @@ impl flutter_rust_bridge::IntoDart for crate::api::library::CoreError {
             Self::DatabaseUnavailable => 0.into_dart(),
             Self::MigrationFailed => 1.into_dart(),
             Self::IncompatibleSchema => 2.into_dart(),
+            Self::FileUnavailable => 3.into_dart(),
+            Self::InvalidSource => 4.into_dart(),
+            Self::UnsupportedFormat => 5.into_dart(),
             _ => unreachable!(),
         }
     }
@@ -270,6 +420,55 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::library::CoreStatus>
         self
     }
 }
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::library::ImportDiagnostic {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.source_hand_id.into_into_dart().into_dart(),
+            self.start_line.into_into_dart().into_dart(),
+            self.end_line.into_into_dart().into_dart(),
+            self.code.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::library::ImportDiagnostic
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::library::ImportDiagnostic>
+    for crate::api::library::ImportDiagnostic
+{
+    fn into_into_dart(self) -> crate::api::library::ImportDiagnostic {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::library::ImportSummary {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.parsed.into_into_dart().into_dart(),
+            self.imported.into_into_dart().into_dart(),
+            self.duplicates.into_into_dart().into_dart(),
+            self.rejected.into_into_dart().into_dart(),
+            self.parser_version.into_into_dart().into_dart(),
+            self.diagnostics.into_into_dart().into_dart(),
+            self.stored_hand_count.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::library::ImportSummary
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::library::ImportSummary>
+    for crate::api::library::ImportSummary
+{
+    fn into_into_dart(self) -> crate::api::library::ImportSummary {
+        self
+    }
+}
 
 impl SseEncode for String {
     // Codec=Sse (Serialization based), see doc to use other codecs
@@ -286,6 +485,9 @@ impl SseEncode for crate::api::library::CoreError {
                 crate::api::library::CoreError::DatabaseUnavailable => 0,
                 crate::api::library::CoreError::MigrationFailed => 1,
                 crate::api::library::CoreError::IncompatibleSchema => 2,
+                crate::api::library::CoreError::FileUnavailable => 3,
+                crate::api::library::CoreError::InvalidSource => 4,
+                crate::api::library::CoreError::UnsupportedFormat => 5,
                 _ => {
                     unimplemented!("");
                 }
@@ -310,12 +512,55 @@ impl SseEncode for i32 {
     }
 }
 
+impl SseEncode for crate::api::library::ImportDiagnostic {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <Option<String>>::sse_encode(self.source_hand_id, serializer);
+        <u32>::sse_encode(self.start_line, serializer);
+        <u32>::sse_encode(self.end_line, serializer);
+        <String>::sse_encode(self.code, serializer);
+    }
+}
+
+impl SseEncode for crate::api::library::ImportSummary {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <u32>::sse_encode(self.parsed, serializer);
+        <u32>::sse_encode(self.imported, serializer);
+        <u32>::sse_encode(self.duplicates, serializer);
+        <u32>::sse_encode(self.rejected, serializer);
+        <String>::sse_encode(self.parser_version, serializer);
+        <Vec<crate::api::library::ImportDiagnostic>>::sse_encode(self.diagnostics, serializer);
+        <u32>::sse_encode(self.stored_hand_count, serializer);
+    }
+}
+
+impl SseEncode for Vec<crate::api::library::ImportDiagnostic> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::api::library::ImportDiagnostic>::sse_encode(item, serializer);
+        }
+    }
+}
+
 impl SseEncode for Vec<u8> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <i32>::sse_encode(self.len() as _, serializer);
         for item in self {
             <u8>::sse_encode(item, serializer);
+        }
+    }
+}
+
+impl SseEncode for Option<String> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <String>::sse_encode(value, serializer);
         }
     }
 }

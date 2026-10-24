@@ -3,6 +3,9 @@
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
+mod hand;
+pub use hand::*;
+
 /// Integer accounting units. Currency precision belongs to the game definition.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Chips(pub i64);
@@ -67,6 +70,9 @@ pub enum Street {
 /// These are event types, not a betting-state validator.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ActionKind {
+    PostSmallBlind { amount_added: Chips },
+    PostBigBlind { amount_added: Chips },
+    PostAnte { amount_added: Chips },
     Fold,
     Check,
     Call { amount_added: Chips },

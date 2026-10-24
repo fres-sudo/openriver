@@ -1,0 +1,19 @@
+PokerStars Hand #1023: Hold'em No Limit ($0.01/$0.02 USD) - 2026/10/24 12:23:00 UTC
+Table 'Example' 6-max Seat #1 is the button
+Seat 1: Ada ($1.00 in chips)
+Seat 2: Bo ($1.00 in chips)
+Ada: posts small blind $0.01
+Bo: posts big blind $0.02
+*** HOLE CARDS ***
+Ada: calls $0.01
+Bo: checks
+*** FLOP *** [2c 7d 9h]
+Ada: checks
+Bo: checks
+*** TURN *** [2c 7d 9h] [2c]
+Ada: checks
+Bo: checks
+Ada collected $0.04 from pot
+*** SUMMARY ***
+Total pot $0.04 | Rake $0.00
+Seat 1: Ada collected $0.04

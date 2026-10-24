@@ -2,7 +2,7 @@
 
 Local-first poker study for **Windows, macOS, Linux, Android, and iOS**, using a shared Flutter application and a Rust core.
 
-This repository is the initial application foundation. It boots the native core, creates/migrates a local SQLite library, checks schema compatibility, and displays loading, ready, or retry states. Hand importing, poker statistics, replay, coaching, and sync are not implemented yet.
+This repository includes a first synthetic hand-history import slice. The app opens a local SQLite library, selects a text file, validates supported synthetic NLHE hands in Rust, stores accepted hands, and reports duplicates and rejections. Live room compatibility, poker statistics, replay, coaching, and sync are not yet implemented.
 
 ## Quick start
 
@@ -81,10 +81,10 @@ It opens and reopens a temporary SQLite database through Dart → Rust, verifies
 
 ## Local data and scope
 
-The app creates `openriver.sqlite3` in the OS application-support directory. Rust enables foreign keys, a bounded lock wait, WAL, and embedded migrations. Schema 1 contains only library metadata; hand tables will be designed with the canonical importer. Do not copy a live SQLite file for backups; a consistent backup command is still future work.
+The app creates `openriver.sqlite3` in the OS application-support directory. Rust enables foreign keys, a bounded lock wait, WAL, and embedded migrations. Schema 2 stores import batches, validated hands, and rejection diagnostics. Do not copy a live SQLite file for backups; a consistent backup command is still future work.
 
 The design document proposes a separate private cloud repository. This public product workspace intentionally contains no hosted AI/billing/auth service. Engine, study, AI-client, and sync packages will be introduced with their first functioning features rather than empty projects. Mobile targets are included now, ahead of the document's original mobile-later schedule.
 
 Application identifiers currently use `dev.openriver.openriver` as a development placeholder. Set final identifiers and signing identities before distribution. Default Flutter icons remain placeholders. Android release signing, Apple signing/notarization, installers, and store deployment are not configured. The project source license remains undecided; do not publish a release until it is chosen. Third-party Cargokit retains its upstream license.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md), the [foundation decision](docs/adr/0001-foundation.md), and the original [technical design](docs/POKER_PLATFORM_TECHNICAL_DESIGN.md).
+See the [next implementation step](docs/NEXT_STEP.md), [CONTRIBUTING.md](CONTRIBUTING.md), the [foundation decision](docs/adr/0001-foundation.md), and the original [technical design](docs/POKER_PLATFORM_TECHNICAL_DESIGN.md).

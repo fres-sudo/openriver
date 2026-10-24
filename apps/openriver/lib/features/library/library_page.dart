@@ -1,10 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:file_selector/file_selector.dart';
 
 import 'library_cubit.dart';
 
 class LibraryPage extends StatelessWidget {
   const LibraryPage({super.key});
+
+  Future<void> _chooseFile(BuildContext context) async {
+    try {
+      final file = await openFile();
+      if (file != null && context.mounted) {
+        await context.read<LibraryCubit>().importPath(file.path);
+      }
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('The file chooser could not open. Please try again.'),
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -77,29 +95,66 @@ class LibraryPage extends StatelessWidget {
                                     ),
                                   ],
                                 ),
-                                LibraryReady() => Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Icon(
-                                      Icons.check_circle_outline,
-                                      color: theme.colorScheme.primary,
-                                      size: 32,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    Text(
-                                      'Your library is ready',
-                                      style: theme.textTheme.titleLarge,
-                                    ),
-                                    const SizedBox(height: 12),
-                                    const Text(
-                                      'Stored on this device. No account needed.',
-                                    ),
-                                    const SizedBox(height: 24),
-                                    const Text(
-                                      'This is the first OpenRiver development build. Hand importing and analysis are coming next.',
-                                    ),
-                                  ],
-                                ),
+                                LibraryReady(
+                                  :final storedCount,
+                                  :final importing,
+                                  :final report,
+                                  :final importError,
+                                ) =>
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Icon(
+                                        Icons.check_circle_outline,
+                                        color: theme.colorScheme.primary,
+                                        size: 32,
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        'Your library is ready',
+                                        style: theme.textTheme.titleLarge,
+                                      ),
+                                      const SizedBox(height: 12),
+                                      const Text(
+                                        'Stored on this device. No account needed.',
+                                      ),
+                                      const SizedBox(height: 24),
+                                      Text('$storedCount stored hands'),
+                                      const SizedBox(height: 16),
+                                      FilledButton.icon(
+                                        onPressed: importing
+                                            ? null
+                                            : () => _chooseFile(context),
+                                        icon: const Icon(Icons.upload_file),
+                                        label: const Text(
+                                          'Import hand history',
+                                        ),
+                                      ),
+                                      if (importing) ...[
+                                        const SizedBox(height: 16),
+                                        const LinearProgressIndicator(
+                                          semanticsLabel: 'Importing hands',
+                                        ),
+                                        const Text('Importing hands…'),
+                                      ],
+                                      if (importError != null) ...[
+                                        const SizedBox(height: 16),
+                                        Text(importError),
+                                      ],
+                                      if (report != null) ...[
+                                        const SizedBox(height: 16),
+                                        Text(
+                                          'Imported ${report.imported}, duplicates ${report.duplicates}, rejected ${report.rejected}.',
+                                        ),
+                                        for (final diagnostic
+                                            in report.diagnostics)
+                                          Text(
+                                            'Hand ${diagnostic.handId ?? 'unknown'}, lines ${diagnostic.startLine}–${diagnostic.endLine}: ${diagnostic.code}',
+                                          ),
+                                      ],
+                                    ],
+                                  ),
                               },
                             ),
                           ),

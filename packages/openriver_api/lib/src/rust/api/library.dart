@@ -8,6 +8,20 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `fmt`, `fmt`, `from`
 
+/// The selected path is used only for this bounded read and is never returned in errors.
+Future<ImportSummary> importHandHistory({
+  required String databasePath,
+  required String filePath,
+}) => RustLib.instance.api.crateApiLibraryImportHandHistory(
+  databasePath: databasePath,
+  filePath: filePath,
+);
+
+Future<int> storedHandCount({required String databasePath}) => RustLib
+    .instance
+    .api
+    .crateApiLibraryStoredHandCount(databasePath: databasePath);
+
 /// Proves the installed core can open and migrate this device's library.
 /// The connection closes explicitly; future commands will use a library handle.
 Future<CoreStatus> initializeLibrary({required String databasePath}) => RustLib
@@ -15,7 +29,14 @@ Future<CoreStatus> initializeLibrary({required String databasePath}) => RustLib
     .api
     .crateApiLibraryInitializeLibrary(databasePath: databasePath);
 
-enum CoreError { databaseUnavailable, migrationFailed, incompatibleSchema }
+enum CoreError {
+  databaseUnavailable,
+  migrationFailed,
+  incompatibleSchema,
+  fileUnavailable,
+  invalidSource,
+  unsupportedFormat,
+}
 
 class CoreStatus {
   final String coreVersion;
@@ -33,4 +54,78 @@ class CoreStatus {
           runtimeType == other.runtimeType &&
           coreVersion == other.coreVersion &&
           schemaVersion == other.schemaVersion;
+}
+
+class ImportDiagnostic {
+  final String? sourceHandId;
+  final int startLine;
+  final int endLine;
+  final String code;
+
+  const ImportDiagnostic({
+    this.sourceHandId,
+    required this.startLine,
+    required this.endLine,
+    required this.code,
+  });
+
+  @override
+  int get hashCode =>
+      sourceHandId.hashCode ^
+      startLine.hashCode ^
+      endLine.hashCode ^
+      code.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ImportDiagnostic &&
+          runtimeType == other.runtimeType &&
+          sourceHandId == other.sourceHandId &&
+          startLine == other.startLine &&
+          endLine == other.endLine &&
+          code == other.code;
+}
+
+class ImportSummary {
+  final int parsed;
+  final int imported;
+  final int duplicates;
+  final int rejected;
+  final String parserVersion;
+  final List<ImportDiagnostic> diagnostics;
+  final int storedHandCount;
+
+  const ImportSummary({
+    required this.parsed,
+    required this.imported,
+    required this.duplicates,
+    required this.rejected,
+    required this.parserVersion,
+    required this.diagnostics,
+    required this.storedHandCount,
+  });
+
+  @override
+  int get hashCode =>
+      parsed.hashCode ^
+      imported.hashCode ^
+      duplicates.hashCode ^
+      rejected.hashCode ^
+      parserVersion.hashCode ^
+      diagnostics.hashCode ^
+      storedHandCount.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ImportSummary &&
+          runtimeType == other.runtimeType &&
+          parsed == other.parsed &&
+          imported == other.imported &&
+          duplicates == other.duplicates &&
+          rejected == other.rejected &&
+          parserVersion == other.parserVersion &&
+          diagnostics == other.diagnostics &&
+          storedHandCount == other.storedHandCount;
 }

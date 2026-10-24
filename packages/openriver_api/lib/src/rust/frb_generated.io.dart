@@ -31,7 +31,19 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   int dco_decode_i_32(dynamic raw);
 
   @protected
+  ImportDiagnostic dco_decode_import_diagnostic(dynamic raw);
+
+  @protected
+  ImportSummary dco_decode_import_summary(dynamic raw);
+
+  @protected
+  List<ImportDiagnostic> dco_decode_list_import_diagnostic(dynamic raw);
+
+  @protected
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
+
+  @protected
+  String? dco_decode_opt_String(dynamic raw);
 
   @protected
   int dco_decode_u_32(dynamic raw);
@@ -55,7 +67,21 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   int sse_decode_i_32(SseDeserializer deserializer);
 
   @protected
+  ImportDiagnostic sse_decode_import_diagnostic(SseDeserializer deserializer);
+
+  @protected
+  ImportSummary sse_decode_import_summary(SseDeserializer deserializer);
+
+  @protected
+  List<ImportDiagnostic> sse_decode_list_import_diagnostic(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
+
+  @protected
+  String? sse_decode_opt_String(SseDeserializer deserializer);
 
   @protected
   int sse_decode_u_32(SseDeserializer deserializer);
@@ -82,10 +108,28 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_i_32(int self, SseSerializer serializer);
 
   @protected
+  void sse_encode_import_diagnostic(
+    ImportDiagnostic self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_import_summary(ImportSummary self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_list_import_diagnostic(
+    List<ImportDiagnostic> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_list_prim_u_8_strict(
     Uint8List self,
     SseSerializer serializer,
   );
+
+  @protected
+  void sse_encode_opt_String(String? self, SseSerializer serializer);
 
   @protected
   void sse_encode_u_32(int self, SseSerializer serializer);
