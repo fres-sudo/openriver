@@ -8,6 +8,26 @@ import 'package:openriver/features/library/library_cubit.dart';
 import 'package:openriver_api/openriver_api.dart';
 import 'package:path/path.dart' as path;
 
+const syntheticHand =
+    '''PokerStars Hand #2001: Hold'em No Limit (\$0.01/\$0.02 USD) - 2026/10/23 12:01:00 UTC
+Table 'Example' 6-max Seat #1 is the button
+Seat 1: Ada (\$1.00 in chips)
+Seat 2: Bo (\$1.00 in chips)
+Ada: posts small blind \$0.01
+Bo: posts big blind \$0.02
+*** HOLE CARDS ***
+Ada: calls \$0.01
+Bo: checks
+*** FLOP *** [2c 7d 9h]
+Ada: bets \$0.02
+Bo: folds
+Uncalled bet (\$0.02) returned to Ada
+Ada collected \$0.04 from pot
+*** SUMMARY ***
+Total pot \$0.04 | Rake \$0.00
+Seat 1: Ada collected \$0.04
+''';
+
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
@@ -38,26 +58,7 @@ void main() {
       ),
     );
     final history = File(path.join(directory.path, 'synthetic.txt'));
-    await history.writeAsString(
-      '''PokerStars Hand #2001: Hold'em No Limit (\$0.01/\$0.02 USD) - 2026/10/23 12:01:00 UTC
-Table 'Example' 6-max Seat #1 is the button
-Seat 1: Ada (\$1.00 in chips)
-Seat 2: Bo (\$1.00 in chips)
-Ada: posts small blind \$0.01
-Bo: posts big blind \$0.02
-*** HOLE CARDS ***
-Ada: calls \$0.01
-Bo: checks
-*** FLOP *** [2c 7d 9h]
-Ada: bets \$0.02
-Bo: folds
-Uncalled bet (\$0.02) returned to Ada
-Ada collected \$0.04 from pot
-*** SUMMARY ***
-Total pot \$0.04 | Rake \$0.00
-Seat 1: Ada collected \$0.04
-''',
-    );
+    await history.writeAsString(syntheticHand);
     final imported = await core.importHandHistory(database, history.path);
     expect(
       (imported.imported, imported.rejected, imported.storedHandCount),
@@ -96,5 +97,55 @@ Seat 1: Ada collected \$0.04
     await importing;
     await tester.pump();
     expect(find.text('10001 stored hands'), findsOneWidget);
+  });
+
+  testWidgets('mixed native import reports rejection and persists valid hand', (
+    tester,
+  ) async {
+    final directory = await Directory.systemTemp.createTemp('openriver_mixed_');
+    addTearDown(() => directory.delete(recursive: true));
+    final database = path.join(directory.path, 'library.sqlite3');
+    final history = File(path.join(directory.path, 'mixed.txt'));
+    await history.writeAsString(
+      '''${syntheticHand.replaceFirst('Hand #2001', 'Hand #3001')}
+PokerStars Hand #3002: Hold'em No Limit (\$0.01/\$0.02 USD) - 2026/10/23 12:02:00 UTC
+Table 'Example' 6-max Seat #1 is the button
+Seat 1: Ada (\$1.00 in chips)
+Seat 2: Bo (\$1.00 in chips)
+Ada: posts small blind \$0.01
+Bo: posts big blind \$0.02
+*** HOLE CARDS ***
+Ada: calls \$0.01
+''',
+    );
+    final core = RustOpenRiverCore();
+    await tester.pumpWidget(
+      OpenRiverApp(core: core, databasePath: () async => database),
+    );
+    for (
+      var i = 0;
+      i < 100 && find.text('Your library is ready').evaluate().isEmpty;
+      i++
+    ) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    final cubit = tester
+        .element(find.text('Import hand history'))
+        .read<LibraryCubit>();
+    await cubit.importPath(history.path);
+    await tester.pump();
+    expect(find.text('Imported 1, duplicates 0, rejected 1.'), findsOneWidget);
+    expect(find.textContaining('Hand 3002'), findsOneWidget);
+    expect(find.textContaining('IncompleteHand'), findsOneWidget);
+    expect(find.text('1 stored hands'), findsOneWidget);
+
+    await core.initializeLibrary(database);
+    expect(await core.storedHandCount(database), 1);
+    final repeated = await core.importHandHistory(database, history.path);
+    expect(
+      (repeated.imported, repeated.duplicates, repeated.rejected),
+      (0, 1, 1),
+    );
+    expect(repeated.storedHandCount, 1);
   });
 }
