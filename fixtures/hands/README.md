@@ -13,3 +13,5 @@ Add synthetic or explicitly permitted, anonymized fixtures to cover all-ins, sid
 `check_facing_bet`, `short_call_not_all_in`, and `bet_facing_bet` are balanced but invalid betting sequences. They prove a check requires no outstanding amount, a short call requires an all-in stack, and a bet cannot follow an outstanding bet on the same street.
 
 `same_seat_blinds` balances at 6 cents but rejects one player posting both blinds. `missing_summary` is incomplete despite balanced actions and payout. `wrong_uncalled_return` reports a balanced 5-cent total but returns only half of an unmatched 2-cent bet. `duplicate_board_card` repeats a flop card on the turn. `unsupported_currency` confirms this adapter rejects a EUR header rather than assuming USD.
+
+`check_after_collection`, `board_after_collection`, `check_after_showdown`, `repeated_showdown`, and `showdown_after_collection` each preserve a balanced 4-cent pot. They reject events that occur after payout or showdown, and a repeated showdown marker. Each has a neighboring expected diagnostic.

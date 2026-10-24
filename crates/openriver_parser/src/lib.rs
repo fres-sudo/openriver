@@ -301,6 +301,8 @@ fn parse_hand(
     let mut disclosed_players = BTreeSet::new();
     let mut ante_seats = BTreeSet::new();
     let mut saw_hole_cards = false;
+    let mut saw_showdown = false;
+    let mut saw_collection = false;
     let mut small_blind_seat = None;
     let mut big_blind_seat = None;
     let mut stated_raises = BTreeMap::new();
@@ -357,13 +359,14 @@ fn parse_hand(
             continue;
         }
         if line == "*** SHOW DOWN ***" {
-            if !saw_hole_cards {
+            if !saw_hole_cards || saw_showdown || saw_collection {
                 return Err(DiagnosticCode::InvalidHand);
             }
+            saw_showdown = true;
             continue;
         }
         if let Some(rest) = line.strip_prefix("*** FLOP *** [") {
-            if !saw_hole_cards {
+            if !saw_hole_cards || saw_showdown || saw_collection {
                 return Err(DiagnosticCode::InvalidHand);
             }
             let cards = rest
@@ -381,6 +384,9 @@ fn parse_hand(
             .strip_prefix("*** TURN *** [")
             .or_else(|| line.strip_prefix("*** RIVER *** ["))
         {
+            if saw_showdown || saw_collection {
+                return Err(DiagnosticCode::InvalidHand);
+            }
             let next = if line.starts_with("*** TURN") {
                 Street::Turn
             } else {
@@ -408,6 +414,9 @@ fn parse_hand(
             continue;
         }
         if let Some(rest) = line.strip_prefix("Uncalled bet ($") {
+            if saw_showdown || saw_collection {
+                return Err(DiagnosticCode::InvalidHand);
+            }
             let (value, name) = rest.split_once(") returned to ").ok_or(malformed)?;
             let seat = seat_for(name, &hand.players).ok_or(malformed)?;
             hand.actions.push(ActionEvent {
@@ -454,7 +463,11 @@ fn parse_hand(
                 amount(&format!("${value}")).ok_or(malformed)?,
                 label.to_owned(),
             ));
+            saw_collection = true;
             continue;
+        }
+        if saw_showdown || saw_collection {
+            return Err(DiagnosticCode::InvalidHand);
         }
         let (name, rest) = line.split_once(": ").ok_or(malformed)?;
         let seat = seat_for(name, &hand.players).ok_or(malformed)?;
@@ -1131,6 +1144,61 @@ mod tests {
         {
             assert_eq!(diagnostic.source_hand_id.as_deref(), Some(id));
             assert_eq!(diagnostic.code, code, "hand {id}");
+            assert_eq!(diagnostic.start_line, header_lines[index + 1]);
+            assert_eq!(diagnostic.end_line, header_lines[index + 2] - 1);
+            assert_eq!(diagnostic.parser_version, PARSER_VERSION);
+        }
+    }
+
+    #[test]
+    fn rejects_events_after_collection_or_showdown_without_losing_neighbors() {
+        let bad = [
+            (
+                include_str!("../../../fixtures/hands/check_after_collection.txt"),
+                "1025",
+            ),
+            (
+                include_str!("../../../fixtures/hands/board_after_collection.txt"),
+                "1026",
+            ),
+            (
+                include_str!("../../../fixtures/hands/check_after_showdown.txt"),
+                "1027",
+            ),
+            (
+                include_str!("../../../fixtures/hands/repeated_showdown.txt"),
+                "1028",
+            ),
+            (
+                include_str!("../../../fixtures/hands/showdown_after_collection.txt"),
+                "1029",
+            ),
+        ];
+        let mut source = include_str!("../../../fixtures/hands/normal_fold.txt").to_owned();
+        for (fixture, _) in &bad {
+            source.push('\n');
+            source.push_str(fixture);
+        }
+        source.push('\n');
+        source.push_str(include_str!("../../../fixtures/hands/raked_pot.txt"));
+        let header_lines: Vec<_> = source
+            .lines()
+            .enumerate()
+            .filter_map(|(index, line)| line.starts_with("PokerStars Hand #").then_some(index + 1))
+            .collect();
+        let result = parse(source.as_bytes()).unwrap();
+        assert_eq!(
+            result
+                .hands
+                .iter()
+                .map(|hand| hand.provenance.external_hand_id.as_str())
+                .collect::<Vec<_>>(),
+            vec!["1002", "1006"]
+        );
+        assert_eq!(result.diagnostics.len(), bad.len());
+        for (index, (diagnostic, (_, id))) in result.diagnostics.iter().zip(bad).enumerate() {
+            assert_eq!(diagnostic.source_hand_id.as_deref(), Some(id));
+            assert_eq!(diagnostic.code, DiagnosticCode::InvalidHand);
             assert_eq!(diagnostic.start_line, header_lines[index + 1]);
             assert_eq!(diagnostic.end_line, header_lines[index + 2] - 1);
             assert_eq!(diagnostic.parser_version, PARSER_VERSION);

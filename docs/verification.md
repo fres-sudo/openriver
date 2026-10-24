@@ -20,6 +20,8 @@ This verifies the application foundation and local database startup. It does not
 
 ## Parser coverage, 2026-10-24
 
+`cargo test -p openriver_parser`, `cargo test --workspace`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo fmt --all -- --check`, and `git diff --check` passed after adding five out-of-order synthetic fixtures; the Rust parser suite has 19 passing tests. A regression test first showed that all five balanced hands were accepted. After the adapter change, it reports `InvalidHand` with the expected IDs, exact line spans, and parser version while accepting valid neighboring hands. The full Dart/Flutter check was not rerun for this parser-only change. This does not establish compatibility with a live export or native chooser behavior. The 50+ fixture target remains open with 25 `.txt` cases.
+
 `dart run melos run check` passed after adding five rejected synthetic fixtures. The parser now rejects a hand where one player posts both blinds, even when its 6-cent pot balances. A mixed-file test confirms `IncompleteHand` for a missing summary, `InvalidHand` for a partial uncalled return and duplicate board card, and `UnsupportedFormat` for a EUR header; valid neighbors still import, and diagnostic IDs, line spans, and parser version are checked. The Rust parser suite has 18 passing tests and the fixture collection has 20 `.txt` cases. No packaged app or chooser test was rerun for this parser-only change.
 
 `adb devices` listed no Android target on 2026-10-24, so the Android native import gate remains pending.
