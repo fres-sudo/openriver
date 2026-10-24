@@ -159,6 +159,43 @@ fn amount(text: &str) -> Option<i64> {
         .checked_add(cents.parse::<i64>().ok()?)
 }
 
+fn utc_timestamp(text: &str) -> Option<String> {
+    let bytes = text.as_bytes();
+    if bytes.len() != 19
+        || bytes[4] != b'/'
+        || bytes[7] != b'/'
+        || bytes[10] != b' '
+        || bytes[13] != b':'
+        || bytes[16] != b':'
+        || bytes
+            .iter()
+            .enumerate()
+            .any(|(index, byte)| !matches!(index, 4 | 7 | 10 | 13 | 16) && !byte.is_ascii_digit())
+    {
+        return None;
+    }
+    let year = text[0..4].parse::<u16>().ok()?;
+    let month = text[5..7].parse::<u8>().ok()?;
+    let day = text[8..10].parse::<u8>().ok()?;
+    let hour = text[11..13].parse::<u8>().ok()?;
+    let minute = text[14..16].parse::<u8>().ok()?;
+    let second = text[17..19].parse::<u8>().ok()?;
+    let leap_year = year % 400 == 0 || (year % 4 == 0 && year % 100 != 0);
+    let days = match month {
+        4 | 6 | 9 | 11 => 30,
+        2 if leap_year => 29,
+        2 => 28,
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+        _ => return None,
+    };
+    if year == 0 || day == 0 || day > days || hour > 23 || minute > 59 || second > 59 {
+        return None;
+    }
+    Some(format!(
+        "{year:04}-{month:02}-{day:02}T{hour:02}:{minute:02}:{second:02}Z"
+    ))
+}
+
 fn card(text: &str) -> Option<Card> {
     let mut chars = text.chars();
     let rank = match chars.next()? {
@@ -225,10 +262,8 @@ fn parse_hand(
     let big = amount(big).ok_or(malformed)?;
     let played_at = date
         .strip_suffix(" UTC")
-        .ok_or(malformed)?
-        .replace('/', "-")
-        .replace(' ', "T")
-        + "Z";
+        .and_then(utc_timestamp)
+        .ok_or(malformed)?;
     let table_line = lines.get(1).ok_or(DiagnosticCode::IncompleteHand)?;
     let table = table_line
         .strip_prefix("Table '")
@@ -1201,6 +1236,70 @@ mod tests {
             assert_eq!(diagnostic.code, DiagnosticCode::InvalidHand);
             assert_eq!(diagnostic.start_line, header_lines[index + 1]);
             assert_eq!(diagnostic.end_line, header_lines[index + 2] - 1);
+            assert_eq!(diagnostic.parser_version, PARSER_VERSION);
+        }
+    }
+
+    #[test]
+    fn validates_utc_calendar_dates_and_preserves_valid_neighbors() {
+        assert_eq!(utc_timestamp("1900/02/29 00:00:00"), None);
+        assert_eq!(
+            utc_timestamp("2000/02/29 00:00:00").as_deref(),
+            Some("2000-02-29T00:00:00Z")
+        );
+        let invalid = [
+            (
+                include_str!("../../../fixtures/hands/non_leap_day.txt"),
+                "1031",
+            ),
+            (
+                include_str!("../../../fixtures/hands/invalid_month.txt"),
+                "1032",
+            ),
+            (
+                include_str!("../../../fixtures/hands/invalid_hour.txt"),
+                "1033",
+            ),
+            (
+                include_str!("../../../fixtures/hands/invalid_minute.txt"),
+                "1034",
+            ),
+            (
+                include_str!("../../../fixtures/hands/invalid_second.txt"),
+                "1035",
+            ),
+        ];
+        let mut source = include_str!("../../../fixtures/hands/normal_fold.txt").to_owned();
+        source.push('\n');
+        source.push_str(include_str!("../../../fixtures/hands/leap_day.txt"));
+        for (fixture, _) in &invalid {
+            source.push('\n');
+            source.push_str(fixture);
+        }
+        source.push('\n');
+        source.push_str(include_str!("../../../fixtures/hands/raked_pot.txt"));
+        let header_lines: Vec<_> = source
+            .lines()
+            .enumerate()
+            .filter_map(|(index, line)| line.starts_with("PokerStars Hand #").then_some(index + 1))
+            .collect();
+        let result = parse(source.as_bytes()).unwrap();
+        assert_eq!(
+            result
+                .hands
+                .iter()
+                .map(|hand| hand.provenance.external_hand_id.as_str())
+                .collect::<Vec<_>>(),
+            vec!["1002", "1030", "1006"]
+        );
+        assert_eq!(result.hands[1].played_at, "2024-02-29T12:01:00Z");
+        assert_eq!(result.hands[1].pots[0].amount.0, 4);
+        assert_eq!(result.diagnostics.len(), invalid.len());
+        for (index, (diagnostic, (_, id))) in result.diagnostics.iter().zip(invalid).enumerate() {
+            assert_eq!(diagnostic.source_hand_id.as_deref(), Some(id));
+            assert_eq!(diagnostic.code, DiagnosticCode::MalformedField);
+            assert_eq!(diagnostic.start_line, header_lines[index + 2]);
+            assert_eq!(diagnostic.end_line, header_lines[index + 3] - 1);
             assert_eq!(diagnostic.parser_version, PARSER_VERSION);
         }
     }
