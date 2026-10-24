@@ -17,3 +17,5 @@ Add synthetic or explicitly permitted, anonymized fixtures to cover all-ins, sid
 `check_after_collection`, `board_after_collection`, `check_after_showdown`, `repeated_showdown`, and `showdown_after_collection` each preserve a balanced 4-cent pot. They reject events that occur after payout or showdown, and a repeated showdown marker. Each has a neighboring expected diagnostic.
 
 `leap_day` is a valid UTC header date. `non_leap_day`, `invalid_month`, `invalid_hour`, `invalid_minute`, and `invalid_second` keep the same balanced hand but reject an impossible timestamp as `MalformedField`.
+
+`century_leap_day` accepts February 29, 2000 with the same 4-cent accounting. The remaining 19 fixtures exercise malformed or contradictory hand IDs, table and seat declarations, game and stake headers, blinds, summary totals and awards, cards, actors, and action wording. Each expectation file records the stable diagnostic and the changed fact. The collection now has 51 distinct `.txt` cases.

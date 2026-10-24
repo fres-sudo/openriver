@@ -1272,6 +1272,8 @@ mod tests {
         let mut source = include_str!("../../../fixtures/hands/normal_fold.txt").to_owned();
         source.push('\n');
         source.push_str(include_str!("../../../fixtures/hands/leap_day.txt"));
+        source.push('\n');
+        source.push_str(include_str!("../../../fixtures/hands/century_leap_day.txt"));
         for (fixture, _) in &invalid {
             source.push('\n');
             source.push_str(fixture);
@@ -1290,16 +1292,150 @@ mod tests {
                 .iter()
                 .map(|hand| hand.provenance.external_hand_id.as_str())
                 .collect::<Vec<_>>(),
-            vec!["1002", "1030", "1006"]
+            vec!["1002", "1030", "1055", "1006"]
         );
         assert_eq!(result.hands[1].played_at, "2024-02-29T12:01:00Z");
         assert_eq!(result.hands[1].pots[0].amount.0, 4);
+        assert_eq!(result.hands[2].played_at, "2000-02-29T12:01:00Z");
+        assert_eq!(result.hands[2].pots[0].amount.0, 4);
         assert_eq!(result.diagnostics.len(), invalid.len());
         for (index, (diagnostic, (_, id))) in result.diagnostics.iter().zip(invalid).enumerate() {
             assert_eq!(diagnostic.source_hand_id.as_deref(), Some(id));
             assert_eq!(diagnostic.code, DiagnosticCode::MalformedField);
-            assert_eq!(diagnostic.start_line, header_lines[index + 2]);
-            assert_eq!(diagnostic.end_line, header_lines[index + 3] - 1);
+            assert_eq!(diagnostic.start_line, header_lines[index + 3]);
+            assert_eq!(diagnostic.end_line, header_lines[index + 4] - 1);
+            assert_eq!(diagnostic.parser_version, PARSER_VERSION);
+        }
+    }
+
+    #[test]
+    fn malformed_header_seat_action_card_and_summary_fixtures_are_isolated() {
+        let invalid = [
+            (
+                include_str!("../../../fixtures/hands/duplicate_seat.txt"),
+                "1036",
+                DiagnosticCode::InvalidHand,
+            ),
+            (
+                include_str!("../../../fixtures/hands/empty_stack.txt"),
+                "1037",
+                DiagnosticCode::InvalidHand,
+            ),
+            (
+                include_str!("../../../fixtures/hands/too_few_table_seats.txt"),
+                "1038",
+                DiagnosticCode::InvalidHand,
+            ),
+            (
+                include_str!("../../../fixtures/hands/bad_hand_id.txt"),
+                "abc",
+                DiagnosticCode::MalformedField,
+            ),
+            (
+                include_str!("../../../fixtures/hands/missing_table_line.txt"),
+                "1040",
+                DiagnosticCode::MalformedField,
+            ),
+            (
+                include_str!("../../../fixtures/hands/unsupported_game.txt"),
+                "1041",
+                DiagnosticCode::MalformedField,
+            ),
+            (
+                include_str!("../../../fixtures/hands/fractional_cent.txt"),
+                "1042",
+                DiagnosticCode::MalformedField,
+            ),
+            (
+                include_str!("../../../fixtures/hands/reversed_blinds.txt"),
+                "1043",
+                DiagnosticCode::InvalidHand,
+            ),
+            (
+                include_str!("../../../fixtures/hands/duplicate_total.txt"),
+                "1044",
+                DiagnosticCode::MalformedField,
+            ),
+            (
+                include_str!("../../../fixtures/hands/wrong_summary_seat.txt"),
+                "1045",
+                DiagnosticCode::MalformedField,
+            ),
+            (
+                include_str!("../../../fixtures/hands/missing_summary_award.txt"),
+                "1046",
+                DiagnosticCode::InvalidHand,
+            ),
+            (
+                include_str!("../../../fixtures/hands/wrong_summary_award.txt"),
+                "1047",
+                DiagnosticCode::InvalidHand,
+            ),
+            (
+                include_str!("../../../fixtures/hands/wrong_summary_rake.txt"),
+                "1048",
+                DiagnosticCode::InvalidHand,
+            ),
+            (
+                include_str!("../../../fixtures/hands/invalid_flop_card.txt"),
+                "1049",
+                DiagnosticCode::MalformedField,
+            ),
+            (
+                include_str!("../../../fixtures/hands/duplicate_hole_card.txt"),
+                "1050",
+                DiagnosticCode::InvalidHand,
+            ),
+            (
+                include_str!("../../../fixtures/hands/unknown_actor.txt"),
+                "1051",
+                DiagnosticCode::MalformedField,
+            ),
+            (
+                include_str!("../../../fixtures/hands/nonnumeric_seat.txt"),
+                "1052",
+                DiagnosticCode::MalformedField,
+            ),
+            (
+                include_str!("../../../fixtures/hands/unknown_action.txt"),
+                "1053",
+                DiagnosticCode::MalformedField,
+            ),
+            (
+                include_str!("../../../fixtures/hands/trailing_summary_line.txt"),
+                "1054",
+                DiagnosticCode::MalformedField,
+            ),
+        ];
+        let mut source = include_str!("../../../fixtures/hands/normal_fold.txt").to_owned();
+        for (fixture, _, _) in &invalid {
+            source.push('\n');
+            source.push_str(fixture);
+        }
+        source.push('\n');
+        source.push_str(include_str!("../../../fixtures/hands/raked_pot.txt"));
+        let header_lines: Vec<_> = source
+            .lines()
+            .enumerate()
+            .filter_map(|(index, line)| line.starts_with("PokerStars Hand #").then_some(index + 1))
+            .collect();
+        let result = parse(source.as_bytes()).unwrap();
+        assert_eq!(
+            result
+                .hands
+                .iter()
+                .map(|hand| hand.provenance.external_hand_id.as_str())
+                .collect::<Vec<_>>(),
+            vec!["1002", "1006"]
+        );
+        assert_eq!(result.diagnostics.len(), invalid.len());
+        for (index, (diagnostic, (_, id, code))) in
+            result.diagnostics.iter().zip(invalid).enumerate()
+        {
+            assert_eq!(diagnostic.source_hand_id.as_deref(), Some(id));
+            assert_eq!(diagnostic.code, code, "hand {id}");
+            assert_eq!(diagnostic.start_line, header_lines[index + 1]);
+            assert_eq!(diagnostic.end_line, header_lines[index + 2] - 1);
             assert_eq!(diagnostic.parser_version, PARSER_VERSION);
         }
     }
