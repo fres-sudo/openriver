@@ -8,9 +8,12 @@ library;
 export 'package:flutter/material.dart' show ThemeMode;
 export 'package:shadcn_ui/shadcn_ui.dart';
 
+export 'src/components/river_button.dart';
 export 'src/context.dart';
+export 'src/feedback/river_state_view.dart';
 export 'src/foundation/tokens.dart';
 export 'src/l10n/river_localizations.dart';
 export 'src/layout/river_layout.dart';
+export 'src/layout/river_page.dart';
 export 'src/layout/window_class.dart';
 export 'src/theme/river_themes.dart';

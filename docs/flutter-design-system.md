@@ -23,17 +23,30 @@ OpenRiver uses [shadcn_ui](https://pub.dev/packages/shadcn_ui/versions/0.2.6) as
 
 | Purpose | Use |
 | --- | --- |
-| App shell and themes | `ShadApp`, `ShadThemeData` |
-| Primary, secondary, outline, destructive actions | `ShadButton` variants |
+| App shell and themes | `ShadApp` with `RiverThemes` |
+| Page scaffold | `RiverPage` with a `RiverPageHeader` |
+| Labeled actions | `RiverButton` (primary, secondary, outline, ghost, destructive) |
+| Loading, empty, and error regions | `RiverStateView` |
 | Content surfaces | `ShadCard` |
 | Short status labels | `ShadBadge` |
-| Inline status and error messages | `ShadAlert` variants |
+| Other inline status messages | `ShadAlert` variants |
 | Temporary feedback | `ShadToaster` and `ShadToast` |
 | Progress | `ShadProgress` with a semantics label |
 | Future inputs and selection | `ShadInput`, `ShadSelect`, `ShadCheckbox`, and other `shadcn_ui` controls |
 | Icons | `LucideIcons` exported by `shadcn_ui` |
 
 Use Flutter `Text`, `Icon`, `SafeArea`, `Column`, `LayoutBuilder`, `Semantics`, and similar primitives to compose these components. Do not add Material or Cupertino controls, themes, snackbars, buttons, cards, chips, input fields, or progress indicators to app screens. When a needed control is absent in this library version, build a small shared widget from Flutter primitives using the Shad theme, and document it here before using it across screens.
+
+### Kit components
+
+- `RiverButton` wraps `ShadButton`. ShadButton 0.2.6 is 40 pixels tall, cannot wrap its label, and ignores Enter and Space. RiverButton gives a hit area of at least 48 pixels that grows with the text scale, wraps long labels, activates from the keyboard, and exposes one semantics node with its label, role, and state. It is disabled while `busy` or without `onPressed`.
+- `RiverPage` fills its region with the background color, applies safe areas, and centers content at a maximum width: `standard` (960), `wide` (1280, for lists and tables), or `full`. It uses 24 pixels of outer padding on compact regions and 48 otherwise. Scrollable pages use the primary scroll controller; set `scrollable: false` when the body scrolls itself.
+- `RiverPageHeader` marks its title as a semantic header. Actions sit beside the title, or wrap below it on compact pages.
+- `RiverStateView.loading`, `.empty`, and `.error` replace content in the same region. Error messages are live regions and must not contain raw errors, paths, or file contents.
+
+### Color contrast
+
+`RiverThemes` adjusts the stock green scheme so text meets WCAG AA (4.5:1). In light mode, primary is green-700 on white, destructive is red-700, and muted text is zinc-600. In dark mode, destructive is red-400 with red-950 text, because alerts draw it as text on the background. `river_themes_test.dart` checks every text and surface pair. Widget tests also run Flutter's text-contrast guideline.
 
 ## Interaction and accessibility
 
@@ -45,7 +58,7 @@ Use Flutter `Text`, `Icon`, `SafeArea`, `Column`, `LayoutBuilder`, `Semantics`, 
 
 ## Planned UI kit work
 
-[ADR 0003](adr/0003-ui-kit-and-app-shell.md) also covers page scaffolding, the responsive app shell, go_router navigation, and app localization. They are not implemented yet.
+[ADR 0003](adr/0003-ui-kit-and-app-shell.md) also covers the responsive app shell, go_router navigation, and app localization. They are not implemented yet. The library page still uses its own layout code; it moves to `RiverPage` with the shell.
 
 ## Current migration
 

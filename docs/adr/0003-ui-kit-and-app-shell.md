@@ -1,7 +1,7 @@
 # ADR 0003: UI kit, app shell, and responsive layout
 
 Date: 2026-10-29
-Status: Accepted; implementation in progress (step 1 complete)
+Status: Accepted; implementation in progress (steps 1–2 complete)
 Scope: `packages/openriver_ui`, the shared Flutter app shell, routing, and localization in `apps/openriver`
 
 ## Decision summary
@@ -39,6 +39,7 @@ packages/openriver_ui/
   lib/src/layout/                RiverWindowClass, RiverLayout, RiverResponsive, RiverPage, RiverPageHeader
   lib/src/navigation/            RiverDestination, RiverShell, RiverShellAction, sidebar/rail/bottom bar (private)
   lib/src/overlay/               showRiverOverlay (sheet on compact, dialog otherwise)
+  lib/src/components/            RiverButton (keyboard activation, 48-pixel target, wrapping labels)
   lib/src/feedback/              RiverStateView (loading, empty, error)
   lib/src/l10n/                  RiverLocalizations for kit-owned strings
   lib/src/context.dart           the context.app accessor
@@ -221,7 +222,7 @@ The `example/` catalog app renders every kit component in both themes and at cho
 Each step lands with its tests and a Conventional Commit.
 
 1. Create the package with foundation tokens, `RiverThemes`, `RiverLayout`/window classes, the `context.app` accessor, and `RiverLocalizations`. Add the import-rule check.
-2. Add `RiverPage`, `RiverPageHeader`, and `RiverStateView`.
+2. Add `RiverPage`, `RiverPageHeader`, `RiverStateView`, and `RiverButton`. ShadButton 0.2.6 lacks keyboard activation, a 48-pixel target, and label wrapping. Adjust theme colors that fail WCAG AA contrast.
 3. Add `RiverShell` with bottom bar, rail, and sidebar, and the full widget-matrix, accessibility, keyboard, and state suites.
 4. Wire up app localization (`gen-l10n`), go_router, Library/Hands/Settings branches, and Import as the shell action with the report overlay. Keep `library_page.dart` hosted with minimal change.
 5. Add goldens, the catalog example, the integration test update, and design-system documentation.
