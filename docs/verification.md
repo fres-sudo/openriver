@@ -4,7 +4,7 @@
 
 `dart run melos run check` passed on clean commit `cadb5de` before the CI trigger edit. It included Dart formatting and analysis, 10 Flutter widget tests, Rust formatting and Clippy, 21 parser tests, and the other Rust workspace tests. This is a local macOS result; it does not prove Windows or Linux builds.
 
-GitHub reports `master` as this repository's default branch and Actions enabled. The workflow file on that branch listened for pushes to `main`; GitHub's Actions workflow listing was empty and `gh run list --workflow ci.yml` returned “workflow not found on the default branch.” The trigger now targets `master`. No remote run has been claimed for the edited workflow.
+GitHub reports `master` as this repository's default branch and Actions enabled. The workflow file on that branch listened for pushes to `main`; GitHub's Actions workflow listing was empty and `gh run list --workflow ci.yml` returned “workflow not found on the default branch.” The trigger now targets `master`. Commit `ceb8341` was pushed to `origin/master` and confirmed through the GitHub connector on 2026-10-29. The connector's commit-run lookup only returns pull-request runs, the local `gh` login is invalid, and an unauthenticated Actions API request returned 403. No remote job result is claimed; Windows/Linux CI proof remains pending.
 
 ## Flutter design system, 2026-10-29
 

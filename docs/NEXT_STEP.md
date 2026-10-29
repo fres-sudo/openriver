@@ -117,4 +117,4 @@ Begin with **step 1 and the golden side-pot fixture**. It sets the canonical acc
 ### CI readiness, 2026-10-29
 
 - The full `dart run melos run check` gate passed on the clean committed tree, including the 10 Flutter widget tests and 21 parser tests.
-- GitHub reports `master` as the default branch, but the CI workflow listened for pushes to `main`; no workflow was registered or run. The push trigger now targets `master`. Windows/Linux results remain pending until this commit is published and the workflow runs. The lawfully usable live sample and mobile chooser/import checks remain open.
+- GitHub reports `master` as the default branch, but the CI workflow listened for pushes to `main`; no workflow was registered or run. The push trigger now targets `master`, and commit `ceb8341` was published on 2026-10-29. Windows/Linux results remain pending until the push run can be inspected. The lawfully usable live sample and mobile chooser/import checks remain open.
