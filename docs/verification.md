@@ -83,3 +83,5 @@ On an Apple Silicon Mac running macOS 26.6.2, a separate Rust debug test importe
 ## Import progress and cancellation, 2026-10-29
 
 `dart run melos run check` passed locally on macOS with the FVM-pinned Flutter 3.41.2 and Rust 1.88.0: formatting, analysis, 11 Flutter widget tests, Clippy, and the Rust workspace tests (6 storage tests, 21 parser tests). New coverage: a storage test that cancels a 600-hand import after the second progress report and asserts no rows or batch remain and that a later import of the same hands succeeds, and a widget test for the progress text, Cancel button, and cancelled message. This is not a packaged-app or device run, and large-file cancellation latency has not been measured.
+
+The ignored 10,000-hand storage test was rerun through the progress-reporting import path on macOS (Apple Silicon, Rust 1.88.0, `--release`, Rust core only, no UI): 4,779,999 source bytes, parse 68 ms, first write 203 ms, repeat import 77 ms, 10,000 rows then 10,000 duplicates. Progress is reported every 250 hands (41 reports). This is a Rust-level timing, not a packaged-app or mobile measurement, and memory was not measured.
