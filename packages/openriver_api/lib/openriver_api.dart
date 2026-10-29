@@ -18,6 +18,7 @@ enum CoreFailure {
   fileUnavailable,
   invalidSource,
   unsupportedFormat,
+  cancelled,
 }
 
 final class CoreException implements Exception {
@@ -27,11 +28,24 @@ final class CoreException implements Exception {
 
 abstract interface class OpenRiverCore {
   Future<LibraryInfo> initializeLibrary(String databasePath);
+
+  /// Reports how many hands have been processed so far while importing.
+  /// Completes with [CoreFailure.cancelled] after [cancelImport] stops it.
   Future<HandImportReport> importHandHistory(
     String databasePath,
-    String filePath,
-  );
+    String filePath, {
+    void Function(ImportProgress progress)? onProgress,
+  });
+
+  /// Stops the running import. Nothing from the cancelled file is stored.
+  void cancelImport();
   Future<int> storedHandCount(String databasePath);
+}
+
+final class ImportProgress {
+  const ImportProgress({required this.processed, required this.total});
+  final int processed;
+  final int total;
 }
 
 final class HandImportDiagnostic {
@@ -97,21 +111,35 @@ final class RustOpenRiverCore implements OpenRiverCore {
         native.CoreError.fileUnavailable => CoreFailure.fileUnavailable,
         native.CoreError.invalidSource => CoreFailure.invalidSource,
         native.CoreError.unsupportedFormat => CoreFailure.unsupportedFormat,
+        native.CoreError.cancelled => CoreFailure.cancelled,
       });
     }
   }
 
   @override
+  void cancelImport() => native.cancelImport();
+
+  @override
   Future<HandImportReport> importHandHistory(
     String databasePath,
-    String filePath,
-  ) async {
+    String filePath, {
+    void Function(ImportProgress progress)? onProgress,
+  }) async {
     try {
       await _ensureInitialized();
-      final result = await native.importHandHistory(
+      native.ImportSummary? result;
+      await for (final event in native.importHandHistory(
         databasePath: databasePath,
         filePath: filePath,
-      );
+      )) {
+        result = event.summary;
+        if (result == null) {
+          onProgress?.call(
+            ImportProgress(processed: event.processed, total: event.total),
+          );
+        }
+      }
+      if (result == null) throw const CoreException(CoreFailure.unavailable);
       return HandImportReport(
         parsed: result.parsed,
         imported: result.imported,
@@ -137,6 +165,7 @@ final class RustOpenRiverCore implements OpenRiverCore {
         native.CoreError.fileUnavailable => CoreFailure.fileUnavailable,
         native.CoreError.invalidSource => CoreFailure.invalidSource,
         native.CoreError.unsupportedFormat => CoreFailure.unsupportedFormat,
+        native.CoreError.cancelled => CoreFailure.cancelled,
       });
     }
   }

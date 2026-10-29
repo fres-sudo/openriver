@@ -7,8 +7,11 @@ use sqlx::{
     SqlitePool,
 };
 use std::path::Path;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 pub const SCHEMA_VERSION: u32 = 2;
+/// Hands between progress reports and cancellation checks.
+const PROGRESS_STEP: usize = 250;
 static MIGRATOR: sqlx::migrate::Migrator = sqlx::migrate!("./migrations");
 
 #[derive(Debug, thiserror::Error)]
@@ -23,6 +26,8 @@ pub enum StorageError {
     Serialization(#[from] serde_json::Error),
     #[error("the hand failed canonical validation")]
     InvalidHand,
+    #[error("the import was cancelled")]
+    Cancelled,
 }
 
 pub struct Library {
@@ -69,6 +74,21 @@ impl Library {
         result: &ParseResult,
         source_sha256: &str,
     ) -> Result<ImportSummary, StorageError> {
+        self.import_with_progress(result, source_sha256, &AtomicBool::new(false), |_, _| {})
+            .await
+    }
+
+    /// Like [`Library::import`], but reports `(processed, total)` hands every
+    /// `PROGRESS_STEP` hands and stops with `Cancelled` when `cancel` is set.
+    /// A cancelled batch is dropped uncommitted, so nothing it wrote survives.
+    pub async fn import_with_progress(
+        &self,
+        result: &ParseResult,
+        source_sha256: &str,
+        cancel: &AtomicBool,
+        mut progress: impl FnMut(usize, usize),
+    ) -> Result<ImportSummary, StorageError> {
+        let total = result.hands.len();
         let mut tx = self.pool.begin().await?;
         let batch_id: i64 = sqlx::query_scalar(
             "INSERT INTO import_batches (source_sha256, parser_version, parsed_count, imported_count, duplicate_count, rejected_count) VALUES (?, ?, ?, 0, 0, ?) RETURNING id")
@@ -78,7 +98,13 @@ impl Library {
             .fetch_one(&mut *tx).await?;
         let mut imported = 0usize;
         let mut duplicates = 0usize;
-        for hand in &result.hands {
+        for (index, hand) in result.hands.iter().enumerate() {
+            if index % PROGRESS_STEP == 0 {
+                if cancel.load(Ordering::Relaxed) {
+                    return Err(StorageError::Cancelled);
+                }
+                progress(index, total);
+            }
             validate_hand(hand).map_err(|_| StorageError::InvalidHand)?;
             let json = serde_json::to_string(hand)?;
             let pot: i64 = hand
@@ -98,6 +124,10 @@ impl Library {
                 duplicates += 1;
             }
         }
+        if cancel.load(Ordering::Relaxed) {
+            return Err(StorageError::Cancelled);
+        }
+        progress(total, total);
         for d in &result.diagnostics {
             sqlx::query("INSERT INTO import_diagnostics (batch_id, source_hand_id, source_start_line, source_end_line, severity, code, parser_version) VALUES (?, ?, ?, ?, ?, ?, ?)")
                 .bind(batch_id).bind(&d.source_hand_id).bind(d.start_line as i64)
@@ -244,6 +274,40 @@ mod tests {
             .unwrap();
         assert_eq!(batches, 0);
         assert_eq!(library.hand_count().await.unwrap(), 0);
+    }
+
+    #[tokio::test]
+    async fn cancelled_import_reports_progress_and_leaves_nothing_behind() {
+        let dir = tempfile::tempdir().unwrap();
+        let library = Library::open(&dir.path().join("library.sqlite3"))
+            .await
+            .unwrap();
+        let template = include_str!("../../../fixtures/hands/normal_fold.txt");
+        let source = (0..600)
+            .map(|i| template.replace("Hand #1002", &format!("Hand #{}", 5_000 + i)))
+            .collect::<Vec<_>>()
+            .join("\n");
+        let parsed = openriver_parser::parse(source.as_bytes()).unwrap();
+        let cancel = AtomicBool::new(false);
+        let mut seen = Vec::new();
+        let result = library
+            .import_with_progress(&parsed, "cancelled", &cancel, |done, total| {
+                seen.push((done, total));
+                if done >= 250 {
+                    cancel.store(true, Ordering::Relaxed);
+                }
+            })
+            .await;
+        assert!(matches!(result, Err(StorageError::Cancelled)));
+        assert_eq!(seen, vec![(0, 600), (250, 600)]);
+        assert_eq!(library.hand_count().await.unwrap(), 0);
+        let batches: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM import_batches")
+            .fetch_one(&library.pool)
+            .await
+            .unwrap();
+        assert_eq!(batches, 0);
+        let again = library.import(&parsed, "cancelled").await.unwrap();
+        assert_eq!(again.imported, 600);
     }
 
     #[tokio::test]

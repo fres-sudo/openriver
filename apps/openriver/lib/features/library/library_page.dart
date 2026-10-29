@@ -114,6 +114,7 @@ class LibraryPage extends StatelessWidget {
                             LibraryReady(
                               :final storedCount,
                               :final importing,
+                              :final progress,
                               :final report,
                               :final importError,
                             ) =>
@@ -148,13 +149,27 @@ class LibraryPage extends StatelessWidget {
                                   ),
                                   if (importing) ...[
                                     const SizedBox(height: 16),
-                                    const ShadProgress(
+                                    ShadProgress(
                                       semanticsLabel: 'Importing hands',
+                                      value:
+                                          progress == null ||
+                                              progress.total == 0
+                                          ? null
+                                          : progress.processed / progress.total,
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      'Importing hands…',
+                                      progress == null
+                                          ? 'Importing hands…'
+                                          : 'Importing hands… ${progress.processed} of ${progress.total}',
                                       style: theme.textTheme.p,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    _LibraryActionButton(
+                                      onPressed: () => context
+                                          .read<LibraryCubit>()
+                                          .cancelImport(),
+                                      label: 'Cancel import',
                                     ),
                                   ],
                                   if (importError != null) ...[

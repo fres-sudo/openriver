@@ -79,3 +79,7 @@ On an Apple Silicon Mac running macOS 26.6.2, a separate Rust debug test importe
 ## Canonical hand accounting, 2026-10-23
 
 `cargo fmt --all`, `cargo test --workspace`, and `cargo clippy --workspace --all-targets -- -D warnings` passed after adding the canonical hand model. Domain tests cover the hand-audited side pot and uncalled return, duplicate known cards, invalid actions/stacks, ineligible awards, missing payouts, and unmatched contributions. The synthetic text fixture has not yet passed through a parser or SQLite, so these checks do not establish import behavior.
+
+## Import progress and cancellation, 2026-10-29
+
+`dart run melos run check` passed locally on macOS with the FVM-pinned Flutter 3.41.2 and Rust 1.88.0: formatting, analysis, 11 Flutter widget tests, Clippy, and the Rust workspace tests (6 storage tests, 21 parser tests). New coverage: a storage test that cancels a 600-hand import after the second progress report and asserts no rows or batch remain and that a later import of the same hands succeeds, and a widget test for the progress text, Cancel button, and cancelled message. This is not a packaged-app or device run, and large-file cancellation latency has not been measured.

@@ -1,6 +1,11 @@
 //! Coarse-grained, typed application commands. Never expose SQL to Dart.
+use crate::frb_generated::StreamSink;
 use openriver_storage::{Library, StorageError};
 use sha2::{Digest, Sha256};
+use std::sync::atomic::{AtomicBool, Ordering};
+
+/// One import runs at a time (the UI enforces this); `cancel_import` flips this flag.
+static CANCEL_IMPORT: AtomicBool = AtomicBool::new(false);
 
 pub struct CoreStatus {
     pub core_version: String,
@@ -15,6 +20,7 @@ pub enum CoreError {
     FileUnavailable,
     InvalidSource,
     UnsupportedFormat,
+    Cancelled,
 }
 
 impl std::fmt::Display for CoreError {
@@ -33,6 +39,7 @@ impl From<StorageError> for CoreError {
             StorageError::IncompatibleSchema => Self::IncompatibleSchema,
             StorageError::Serialization(_) => Self::DatabaseUnavailable,
             StorageError::InvalidHand => Self::InvalidSource,
+            StorageError::Cancelled => Self::Cancelled,
         }
     }
 }
@@ -54,11 +61,26 @@ pub struct ImportSummary {
     pub stored_hand_count: u32,
 }
 
+/// Streamed during an import. The last event carries the `summary`; earlier ones only progress.
+pub struct ImportEvent {
+    pub processed: u32,
+    pub total: u32,
+    pub summary: Option<ImportSummary>,
+}
+
+/// Asks the running import to stop; its uncommitted batch is discarded.
+#[flutter_rust_bridge::frb(sync)]
+pub fn cancel_import() {
+    CANCEL_IMPORT.store(true, Ordering::Relaxed);
+}
+
 /// The selected path is used only for this bounded read and is never returned in errors.
 pub async fn import_hand_history(
     database_path: String,
     file_path: String,
-) -> Result<ImportSummary, CoreError> {
+    events: StreamSink<ImportEvent>,
+) -> Result<(), CoreError> {
+    CANCEL_IMPORT.store(false, Ordering::Relaxed);
     let path = std::path::Path::new(&file_path);
     let size = std::fs::metadata(path)
         .map_err(|_| CoreError::FileUnavailable)?
@@ -73,10 +95,22 @@ pub async fn import_hand_history(
     })?;
     let source_hash = format!("{:x}", Sha256::digest(&bytes));
     let library = Library::open(std::path::Path::new(&database_path)).await?;
-    let summary = library.import(&parsed, &source_hash).await?;
-    let stored_hand_count = library.hand_count().await? as u32;
+    let outcome = library
+        .import_with_progress(&parsed, &source_hash, &CANCEL_IMPORT, |processed, total| {
+            let _ = events.add(ImportEvent {
+                processed: processed as u32,
+                total: total as u32,
+                summary: None,
+            });
+        })
+        .await;
+    let stored_hand_count = match &outcome {
+        Ok(_) => library.hand_count().await? as u32,
+        Err(_) => 0,
+    };
     library.close().await;
-    Ok(ImportSummary {
+    let summary = outcome?;
+    let report = ImportSummary {
         parsed: summary.parsed as u32,
         imported: summary.imported as u32,
         duplicates: summary.duplicates as u32,
@@ -93,7 +127,13 @@ pub async fn import_hand_history(
             })
             .collect(),
         stored_hand_count,
-    })
+    };
+    let _ = events.add(ImportEvent {
+        processed: report.parsed,
+        total: report.parsed,
+        summary: Some(report),
+    });
+    Ok(())
 }
 
 pub async fn stored_hand_count(database_path: String) -> Result<u32, CoreError> {
