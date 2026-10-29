@@ -1,7 +1,9 @@
 import 'package:flutter/widgets.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
+import '../components/river_button.dart';
 import '../foundation/tokens.dart';
+import '../navigation/river_shell_scope.dart';
 import 'river_layout.dart';
 import 'window_class.dart';
 
@@ -21,12 +23,21 @@ enum RiverPageWidth {
 ///
 /// The title is a semantic header. Actions sit beside the title when the page
 /// is wider than compact and wrap below it otherwise or when space runs out.
-class RiverPageHeader extends StatelessWidget {
+///
+/// Inside a `RiverShell`:
+///
+/// - With a bottom bar, the shell's primary action is shown first among the
+///   actions, unless [showShellAction] is false.
+/// - After the selected destination changes, keyboard focus moves to the
+///   title of the newly visible page, so screen readers announce it and Tab
+///   continues from the top of the page.
+class RiverPageHeader extends StatefulWidget {
   const RiverPageHeader({
     super.key,
     required this.title,
     this.description,
     this.actions = const [],
+    this.showShellAction = true,
   });
 
   final String title;
@@ -35,6 +46,43 @@ class RiverPageHeader extends StatelessWidget {
   /// Typically `RiverButton`s, in order of importance.
   final List<Widget> actions;
 
+  /// Whether to show the shell's primary action when the shell has no other
+  /// place for it.
+  final bool showShellAction;
+
+  @override
+  State<RiverPageHeader> createState() => _RiverPageHeaderState();
+}
+
+class _RiverPageHeaderState extends State<RiverPageHeader> {
+  final _titleFocus = FocusNode(debugLabel: 'RiverPageHeader title');
+
+  /// The shell navigation this header has already responded to.
+  int? _handledNavigation;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final navigation = RiverShellScope.maybeOf(context)?.navigationCount;
+    // Hidden branches of an indexed stack have tickers disabled.
+    final visible = TickerMode.valuesOf(context).enabled;
+    if (navigation == null || !visible) return;
+    final first = _handledNavigation == null;
+    if (navigation == _handledNavigation) return;
+    _handledNavigation = navigation;
+    // At launch (no navigation yet), leave focus alone.
+    if (first && navigation == 0) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _titleFocus.requestFocus();
+    });
+  }
+
+  @override
+  void dispose() {
+    _titleFocus.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = ShadTheme.of(context);
@@ -42,21 +90,40 @@ class RiverPageHeader extends StatelessWidget {
     final compact =
         RiverLayout.of(context, RiverLayoutAspect.content) ==
         RiverWindowClass.compact;
+    final shell = RiverShellScope.maybeOf(context);
+    final shellAction =
+        widget.showShellAction && shell?.form == RiverNavigationForm.bottomBar
+        ? shell?.primaryAction
+        : null;
+    final actions = [
+      if (shellAction != null)
+        RiverButton(
+          label: shellAction.label,
+          icon: shellAction.icon,
+          onPressed: shellAction.onPressed,
+          busy: shellAction.busy,
+        ),
+      ...widget.actions,
+    ];
 
     final heading = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Semantics(
-          header: true,
-          child: Text(
-            title,
-            style: compact ? theme.textTheme.h3 : theme.textTheme.h2,
+        Focus(
+          focusNode: _titleFocus,
+          skipTraversal: true,
+          child: Semantics(
+            header: true,
+            child: Text(
+              widget.title,
+              style: compact ? theme.textTheme.h3 : theme.textTheme.h2,
+            ),
           ),
         ),
-        if (description != null) ...[
+        if (widget.description != null) ...[
           SizedBox(height: spacing.sm),
-          Text(description!, style: theme.textTheme.muted),
+          Text(widget.description!, style: theme.textTheme.muted),
         ],
       ],
     );

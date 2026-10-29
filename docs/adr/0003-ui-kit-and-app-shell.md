@@ -1,7 +1,7 @@
 # ADR 0003: UI kit, app shell, and responsive layout
 
 Date: 2026-10-29
-Status: Accepted; implementation in progress (steps 1–2 complete)
+Status: Accepted; implementation in progress (steps 1–3 complete)
 Scope: `packages/openriver_ui`, the shared Flutter app shell, routing, and localization in `apps/openriver`
 
 ## Decision summary
@@ -117,6 +117,7 @@ RiverShell(
   ],
   selectedIndex: shell.currentIndex,
   onDestinationSelected: shell.goBranch,
+  onDestinationReselected: …, // pop to root, or scroll to top at the root
   primaryAction: RiverShellAction(label: …, icon: LucideIcons.upload, onPressed: …, busy: importing),
   body: shell,
 )
@@ -124,9 +125,11 @@ RiverShell(
 
 | Window class (effective) | Navigation | Primary action |
 | --- | --- | --- |
-| compact | Bottom bar with labels; at most 5 destinations (asserted) | Shown in the page header actions by `RiverPage` |
-| medium | 80-pixel rail with icons and labels | Icon button at the top of the rail, with tooltip and semantic label |
-| expanded and wider | 256-pixel sidebar with labels; the user can collapse it to the rail | Full-width button at the top of the sidebar |
+| compact | Bottom bar with labels; at most 5 destinations (asserted) | First of the actions in `RiverPageHeader`, unless the header opts out |
+| medium | Rail with icons and labels, 80 pixels wide at default text size and wider with larger text | Icon button at the top of the rail, with tooltip and semantic label |
+| expanded and wider | Sidebar with labels, 256 pixels wide at default text size, up to 360 with larger text; the user can collapse it to the rail | Full-width button at the top of the sidebar |
+
+Windows in a sidebar class that are shorter than 480 pixels, such as a phone in landscape, use the rail. Their height cannot fit the sidebar's header and destinations.
 
 The behaviors below are requirements. Each has a test.
 
@@ -139,13 +142,13 @@ The behaviors below are requirements. Each has a test.
   - Navigation and body are separate focus traversal groups.
   - Arrow keys move between destinations.
   - Enter and Space activate a destination.
-  - ⌘1–3 (macOS) and Ctrl+1–3 (Windows, Linux) select destinations.
-  - After a destination change, focus moves to the new page's heading.
+  - ⌘1–3 (macOS) and Ctrl+1–3 (Windows, Linux) select destinations. The shell registers them with the app's `ShortcutRegistry`, so they work wherever focus is.
+  - After a destination change, focus moves to the new page's heading. `RiverPageHeader` does this when the shell's navigation count changes and its page is visible (its tickers are enabled). Launch does not move focus.
 - **Semantics.**
   - Destinations announce their label, selected state, and position in a mutually exclusive group.
   - Collapsed or icon-only controls have semantic labels and tooltips.
   - Badges include a spoken count.
-- **Motion.** Sidebar collapse and layout transitions use `RiverDurations`. They are disabled when `MediaQuery.disableAnimations` is true.
+- **Motion.** The first implementation has no navigation animation; collapsing the sidebar and changing form are immediate. Any later transition uses `RiverDurations` and is disabled when `MediaQuery.disableAnimations` is true.
 - **Direction.** All spacing is directional. The navigation sits on the start side in right-to-left locales.
 - **Targets.** All interactive navigation is at least 48 by 48 logical pixels.
 - **Desktop minimum.** Desktop windows have a minimum size of 360 by 560, which avoids unusable layouts below the compact class.
@@ -223,7 +226,7 @@ Each step lands with its tests and a Conventional Commit.
 
 1. Create the package with foundation tokens, `RiverThemes`, `RiverLayout`/window classes, the `context.app` accessor, and `RiverLocalizations`. Add the import-rule check.
 2. Add `RiverPage`, `RiverPageHeader`, `RiverStateView`, and `RiverButton`. ShadButton 0.2.6 lacks keyboard activation, a 48-pixel target, and label wrapping. Adjust theme colors that fail WCAG AA contrast.
-3. Add `RiverShell` with bottom bar, rail, and sidebar, and the full widget-matrix, accessibility, keyboard, and state suites.
+3. Add `RiverShell` with bottom bar, rail, and sidebar, and the full widget-matrix, accessibility, keyboard, and state suites. Navigation items use `FocusableActionDetector` because shadcn_ui 0.2.6 has no navigation controls. The desktop minimum window size moves to step 4, because it is set in each platform runner.
 4. Wire up app localization (`gen-l10n`), go_router, Library/Hands/Settings branches, and Import as the shell action with the report overlay. Keep `library_page.dart` hosted with minimal change.
 5. Add goldens, the catalog example, the integration test update, and design-system documentation.
 

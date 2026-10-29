@@ -24,6 +24,7 @@ OpenRiver uses [shadcn_ui](https://pub.dev/packages/shadcn_ui/versions/0.2.6) as
 | Purpose | Use |
 | --- | --- |
 | App shell and themes | `ShadApp` with `RiverThemes` |
+| App frame and navigation | `RiverShell` with `RiverDestination`s and a `RiverShellAction` |
 | Page scaffold | `RiverPage` with a `RiverPageHeader` |
 | Labeled actions | `RiverButton` (primary, secondary, outline, ghost, destructive) |
 | Loading, empty, and error regions | `RiverStateView` |
@@ -44,6 +45,15 @@ Use Flutter `Text`, `Icon`, `SafeArea`, `Column`, `LayoutBuilder`, `Semantics`, 
 - `RiverPageHeader` marks its title as a semantic header. Actions sit beside the title, or wrap below it on compact pages.
 - `RiverStateView.loading`, `.empty`, and `.error` replace content in the same region. Error messages are live regions and must not contain raw errors, paths, or file contents.
 
+### App shell
+
+- `RiverShell` frames the app with `RiverDestination`s, a selected index, and the body. It reports selections and reselections; routing stays in the app.
+- The navigation form follows `context.app.responsive.navigation`: a bottom bar when compact, a rail when medium, and a sidebar when expanded or wider. Sidebar windows shorter than 480 pixels use the rail. The user can collapse the sidebar to the rail.
+- The body keeps its state when the form changes. It receives safe-area padding only for edges the navigation does not cover, and a content class for its own width.
+- `RiverShellAction` is the app-wide primary action. It sits at the top of the sidebar or rail. With a bottom bar, `RiverPageHeader` shows it first among the page actions.
+- The bottom bar hides while the on-screen keyboard is visible.
+- Destinations are announced as selected within a group, with badge counts spoken. Arrow keys move between them, Enter and Space select, and ⌘ or Ctrl with 1–9 selects from anywhere. After a selection, focus moves to the new page's title.
+
 ### Color contrast
 
 `RiverThemes` adjusts the stock green scheme so text meets WCAG AA (4.5:1). In light mode, primary is green-700 on white, destructive is red-700, and muted text is zinc-600. In dark mode, destructive is red-400 with red-950 text, because alerts draw it as text on the background. `river_themes_test.dart` checks every text and surface pair. Widget tests also run Flutter's text-contrast guideline.
@@ -58,7 +68,7 @@ Use Flutter `Text`, `Icon`, `SafeArea`, `Column`, `LayoutBuilder`, `Semantics`, 
 
 ## Planned UI kit work
 
-[ADR 0003](adr/0003-ui-kit-and-app-shell.md) also covers the responsive app shell, go_router navigation, and app localization. They are not implemented yet. The library page still uses its own layout code; it moves to `RiverPage` with the shell.
+[ADR 0003](adr/0003-ui-kit-and-app-shell.md) also covers go_router navigation and app localization. They are not implemented yet, and the app does not use `RiverShell` yet. The library page still uses its own layout code; it moves to `RiverPage` when the shell hosts it.
 
 ## Current migration
 

@@ -16,4 +16,7 @@ export 'src/l10n/river_localizations.dart';
 export 'src/layout/river_layout.dart';
 export 'src/layout/river_page.dart';
 export 'src/layout/window_class.dart';
+export 'src/navigation/river_destination.dart';
+export 'src/navigation/river_shell.dart';
+export 'src/navigation/river_shell_scope.dart';
 export 'src/theme/river_themes.dart';
