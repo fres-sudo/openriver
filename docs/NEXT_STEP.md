@@ -118,3 +118,4 @@ Begin with **step 1 and the golden side-pot fixture**. It sets the canonical acc
 
 - The full `dart run melos run check` gate passed on the clean committed tree, including the 10 Flutter widget tests and 21 parser tests.
 - GitHub reports `master` as the default branch, but the CI workflow listened for pushes to `main`; no workflow was registered or run. The push trigger now targets `master`, and commit `ceb8341` was published on 2026-10-29. Windows/Linux results remain pending until the push run can be inspected. The lawfully usable live sample and mobile chooser/import checks remain open.
+- [CI run 1](https://github.com/fres-sudo/openriver/actions/runs/40860842073) started for `ceb8341`. Its Android job failed during SDK setup because `setup-android@v3` requests the removed `tools` package. The workflow now uses v4, whose default packages omit `tools`. This workflow fix still needs a remote run; desktop results from run 1 are being checked separately.

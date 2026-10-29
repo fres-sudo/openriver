@@ -97,7 +97,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
+      - uses: android-actions/setup-android@v4
         if: matrix.target == 'android'
       - uses: subosito/flutter-action@v2
         with:
