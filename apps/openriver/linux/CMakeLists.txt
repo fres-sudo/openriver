@@ -74,6 +74,12 @@ set_target_properties(${BINARY_NAME}
 # them to the application.
 include(flutter/generated_plugins.cmake)
 
+# Rive's bundled SheenBidi C source keeps an assertion-only variable in
+# release builds. Suppress that warning for the plugin while retaining -Werror
+# for the application and other targets.
+if(TARGET rive_common_plugin)
+  target_compile_options(rive_common_plugin PRIVATE -Wno-unused-variable)
+endif()
 
 # === Installation ===
 # By default, "installing" just makes a relocatable bundle in the build

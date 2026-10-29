@@ -10,6 +10,10 @@ The GitHub connector's general read endpoint identified [push run 1](https://git
 
 The Windows job reached `cargo test --workspace --locked` and failed `missing_or_repeated_ante_is_rejected`. That test's missing-ante mutation searched for an LF-terminated line, while Git checkout supplied a CRLF fixture, leaving the valid hand unchanged. The mutation now matches the ante wording without its line ending, and the test runs its cases with both LF and CRLF fixtures. Local `cargo test -p openriver_parser --locked` passed all 21 tests, and Rust formatting plus `git diff --check` passed. The revised test has not run on Windows yet.
 
+The Linux job passed `cargo test --workspace --locked` but `flutter build linux` failed compiling Rive's bundled SheenBidi C source: `SBParagraph.c:618:16: error: unused variable 'stringLength' [-Werror,-Wunused-variable]`. The Rive plugin applies the app's standard `-Werror` flags after its own warning suppression. A targeted CMake option now suppresses this warning on `rive_common_plugin` only. No revised Linux build has run yet.
+
+After the Android workflow and Windows parser-test edits, `dart run melos run check` passed locally on macOS, including formatting, analysis, Flutter tests, Clippy, and Rust workspace tests. This check preceded the Linux-only CMake option.
+
 ## Flutter design system, 2026-10-29
 
 `dart run melos run check` passed on the working tree after the library screen moved to `shadcn_ui`: Dart formatting and analysis, 10 Flutter widget tests, Rust Clippy, and Rust workspace tests. The widget tests cover startup, retry, import reporting, system dark appearance, and layouts at 375×812, 812×375, and 1440×900 logical pixels with 2× text scaling. `flutter build macos --debug` produced a native app bundle, and `git diff --check` passed. A comparison with the published `shadcn_ui` 0.2.6 package found only the two documented runtime compatibility edits in the vendored copy. The app was not launched for this increment, so the updated screen has no new visual or native chooser interaction result.
