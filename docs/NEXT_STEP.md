@@ -113,3 +113,8 @@ Begin with **step 1 and the golden side-pot fixture**. It sets the canonical acc
 ### Flutter design system, 2026-10-29
 
 - The shared library screen now uses `shadcn_ui` components and system-selected light/dark themes. A small vendored 0.2.6 compatibility copy keeps the pinned Flutter 3.41.2 build working. The full local check, enlarged-text layout tests, and macOS debug build passed; this increment was not launched or visually inspected. The import compatibility and platform gates above remain open.
+
+### CI readiness, 2026-10-29
+
+- The full `dart run melos run check` gate passed on the clean committed tree, including the 10 Flutter widget tests and 21 parser tests.
+- GitHub reports `master` as the default branch, but the CI workflow listened for pushes to `main`; no workflow was registered or run. The push trigger now targets `master`. Windows/Linux results remain pending until this commit is published and the workflow runs. The lawfully usable live sample and mobile chooser/import checks remain open.

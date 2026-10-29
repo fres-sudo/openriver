@@ -1,5 +1,11 @@
 # Verification
 
+## CI readiness, 2026-10-29
+
+`dart run melos run check` passed on clean commit `cadb5de` before the CI trigger edit. It included Dart formatting and analysis, 10 Flutter widget tests, Rust formatting and Clippy, 21 parser tests, and the other Rust workspace tests. This is a local macOS result; it does not prove Windows or Linux builds.
+
+GitHub reports `master` as this repository's default branch and Actions enabled. The workflow file on that branch listened for pushes to `main`; GitHub's Actions workflow listing was empty and `gh run list --workflow ci.yml` returned “workflow not found on the default branch.” The trigger now targets `master`. No remote run has been claimed for the edited workflow.
+
 ## Flutter design system, 2026-10-29
 
 `dart run melos run check` passed on the working tree after the library screen moved to `shadcn_ui`: Dart formatting and analysis, 10 Flutter widget tests, Rust Clippy, and Rust workspace tests. The widget tests cover startup, retry, import reporting, system dark appearance, and layouts at 375×812, 812×375, and 1440×900 logical pixels with 2× text scaling. `flutter build macos --debug` produced a native app bundle, and `git diff --check` passed. A comparison with the published `shadcn_ui` 0.2.6 package found only the two documented runtime compatibility edits in the vendored copy. The app was not launched for this increment, so the updated screen has no new visual or native chooser interaction result.
