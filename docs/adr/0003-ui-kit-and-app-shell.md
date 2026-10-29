@@ -1,7 +1,7 @@
 # ADR 0003: UI kit, app shell, and responsive layout
 
 Date: 2026-10-29
-Status: Proposed; implementation pending
+Status: Accepted; implementation in progress (step 1 complete)
 Scope: `packages/openriver_ui`, the shared Flutter app shell, routing, and localization in `apps/openriver`
 
 ## Decision summary
@@ -26,7 +26,7 @@ These are architecture choices. No shell, router, or kit package exists until th
 
 `packages/openriver_ui` is a Pub workspace member. It may depend only on Flutter, `flutter_localizations`, and `shadcn_ui`. It must not import `openriver_api`, `flutter_bloc`, `go_router`, or any app feature. The kit receives everything as constructor data and callbacks.
 
-The public library is `package:openriver_ui/openriver_ui.dart`. It re-exports `shadcn_ui` (including `LucideIcons`), so feature code has a single UI import. The `melos check` gate adds an import rule that fails on these imports:
+The public library is `package:openriver_ui/openriver_ui.dart`. It re-exports `shadcn_ui` (including `LucideIcons`), so feature code has a single UI import. It also re-exports Material's `ThemeMode`, which `ShadApp.themeMode` requires; it exports no other Material type. Architecture tests in both packages, run by the `melos check` gate, fail on these imports:
 
 - `package:flutter/material.dart` or `package:flutter/cupertino.dart` anywhere in `apps/openriver/lib` or `packages/openriver_ui/lib`
 - `package:shadcn_ui/...` outside the kit
@@ -34,8 +34,8 @@ The public library is `package:openriver_ui/openriver_ui.dart`. It re-exports `s
 ```text
 packages/openriver_ui/
   lib/openriver_ui.dart          public exports only
-  lib/src/foundation/            RiverSpacing, RiverRadii, RiverDurations, RiverSizes
-  lib/src/theme/                 RiverTheme, RiverThemeData (light/dark, semantic extras)
+  lib/src/foundation/            RiverSpacing, RiverSizes, RiverDurations
+  lib/src/theme/                 RiverThemes (light/dark Shad themes; semantic extras later)
   lib/src/layout/                RiverWindowClass, RiverLayout, RiverResponsive, RiverPage, RiverPageHeader
   lib/src/navigation/            RiverDestination, RiverShell, RiverShellAction, sidebar/rail/bottom bar (private)
   lib/src/overlay/               showRiverOverlay (sheet on compact, dialog otherwise)
@@ -57,6 +57,7 @@ context.app.theme.colors        // ShadColorScheme
 context.app.theme.textTheme     // ShadTextTheme
 context.app.theme.spacing       // RiverSpacing tokens
 context.app.theme.brightness
+context.app.theme.radius        // the Shad theme's corner radius
 context.app.responsive.isMobile // window is compact
 context.app.responsive.content  // RiverWindowClass of the body region
 context.app.input.isTouch       // primary input modality
@@ -211,7 +212,7 @@ The `example/` catalog app renders every kit component in both themes and at cho
 ## Consequences
 
 - One more workspace package and two new dependencies (`go_router` and `intl` through `gen-l10n`). Melos scripts must include the kit's tests and formatting paths.
-- `design_system.dart` moves into the kit as `RiverThemeData` and tokens. App code reads it through `context.app`.
+- `design_system.dart` moves into the kit as `RiverThemes` and tokens. App code reads it through `context.app`.
 - Feature code stops importing `shadcn_ui` directly. Upgrading or replacing the vendored Shad copy is then limited to the kit.
 - The kit's first increment covers what the shell and existing screens need. Inputs, tables, poker widgets (cards, chips, seats), and adaptive overlays beyond the import report are added when a feature needs them, and recorded in [the design system](../flutter-design-system.md).
 
@@ -219,7 +220,7 @@ The `example/` catalog app renders every kit component in both themes and at cho
 
 Each step lands with its tests and a Conventional Commit.
 
-1. Create the package with foundation tokens, `RiverThemeData`, `RiverLayout`/window classes, the `context.app` accessor, and `RiverLocalizations`. Add the import-rule check.
+1. Create the package with foundation tokens, `RiverThemes`, `RiverLayout`/window classes, the `context.app` accessor, and `RiverLocalizations`. Add the import-rule check.
 2. Add `RiverPage`, `RiverPageHeader`, and `RiverStateView`.
 3. Add `RiverShell` with bottom bar, rail, and sidebar, and the full widget-matrix, accessibility, keyboard, and state suites.
 4. Wire up app localization (`gen-l10n`), go_router, Library/Hands/Settings branches, and Import as the shell action with the report overlay. Keep `library_page.dart` hosted with minimal change.

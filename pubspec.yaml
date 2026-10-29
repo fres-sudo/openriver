@@ -5,6 +5,7 @@ environment:
 workspace:
   - apps/openriver
   - packages/openriver_api
+  - packages/openriver_ui
 dev_dependencies:
   melos: 8.2.1
   flutter_lints: 6.0.0
@@ -28,9 +29,9 @@ melos:
       packageFilters:
         dirExists: test
     format:
-      run: dart format apps/openriver/lib apps/openriver/test apps/openriver/integration_test packages/openriver_api/lib && cargo fmt --all
+      run: dart format apps/openriver/lib apps/openriver/test apps/openriver/integration_test packages/openriver_api/lib packages/openriver_ui/lib packages/openriver_ui/test && cargo fmt --all
     format:check:
-      run: dart format --output=none --set-exit-if-changed apps/openriver/lib apps/openriver/test apps/openriver/integration_test packages/openriver_api/lib && cargo fmt --all -- --check
+      run: dart format --output=none --set-exit-if-changed apps/openriver/lib apps/openriver/test apps/openriver/integration_test packages/openriver_api/lib packages/openriver_ui/lib packages/openriver_ui/test && cargo fmt --all -- --check
     rust:test:
       run: cargo test --workspace --locked
     rust:lint:

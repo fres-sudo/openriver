@@ -3,9 +3,8 @@ import 'dart:math' as math;
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:shadcn_ui/shadcn_ui.dart';
+import 'package:openriver_ui/openriver_ui.dart';
 
-import '../../app/design_system.dart';
 import 'library_cubit.dart';
 
 class LibraryPage extends StatelessWidget {
@@ -37,18 +36,19 @@ class LibraryPage extends StatelessWidget {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final compact =
-                constraints.maxWidth < OpenRiverDesignSystem.compactBreakpoint;
+                RiverWindowClass.fromWidth(constraints.maxWidth) ==
+                RiverWindowClass.compact;
             return SingleChildScrollView(
               padding: EdgeInsets.all(
                 compact
-                    ? OpenRiverDesignSystem.compactPagePadding
-                    : OpenRiverDesignSystem.widePagePadding,
+                    ? context.app.theme.spacing.xl
+                    : context.app.theme.spacing.xxxl,
               ),
               child: Align(
                 alignment: Alignment.topCenter,
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    maxWidth: OpenRiverDesignSystem.contentMaxWidth,
+                  constraints: BoxConstraints(
+                    maxWidth: context.app.theme.sizes.contentMaxWidth,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:openriver/app/openriver_app.dart';
 import 'package:openriver/features/library/library_cubit.dart';
 import 'package:openriver_api/openriver_api.dart';
-import 'package:shadcn_ui/shadcn_ui.dart';
+import 'package:openriver_ui/openriver_ui.dart';
 
 class FakeCore implements OpenRiverCore {
   FakeCore(this.open, {this.import});
