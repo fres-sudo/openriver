@@ -971,17 +971,20 @@ mod tests {
 
     #[test]
     fn missing_or_repeated_ante_is_rejected() {
-        let fixture = include_str!("../../../fixtures/hands/ante_fold.txt");
-        for source in [
-            fixture.replace("Bo: posts the ante $0.01\n", ""),
-            fixture.replace(
-                "Bo: posts the ante $0.01",
-                "Bo: posts the ante $0.01\nBo: posts the ante $0.01",
-            ),
-        ] {
-            let result = parse(source.as_bytes()).unwrap();
-            assert!(result.hands.is_empty());
-            assert_eq!(result.diagnostics[0].code, DiagnosticCode::InvalidHand);
+        let normalized =
+            include_str!("../../../fixtures/hands/ante_fold.txt").replace("\r\n", "\n");
+        for fixture in [normalized.clone(), normalized.replace('\n', "\r\n")] {
+            for source in [
+                fixture.replace("Bo: posts the ante $0.01", ""),
+                fixture.replace(
+                    "Bo: posts the ante $0.01",
+                    "Bo: posts the ante $0.01\nBo: posts the ante $0.01",
+                ),
+            ] {
+                let result = parse(source.as_bytes()).unwrap();
+                assert!(result.hands.is_empty());
+                assert_eq!(result.diagnostics[0].code, DiagnosticCode::InvalidHand);
+            }
         }
     }
 
