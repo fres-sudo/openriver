@@ -6,12 +6,15 @@ PODS:
     - Flutter
   - openriver_api (0.1.0):
     - Flutter
+  - rive_common (0.0.1):
+    - Flutter
 
 DEPENDENCIES:
   - file_selector_ios (from `.symlinks/plugins/file_selector_ios/ios`)
   - Flutter (from `Flutter`)
   - integration_test (from `.symlinks/plugins/integration_test/ios`)
   - openriver_api (from `.symlinks/plugins/openriver_api/ios`)
+  - rive_common (from `.symlinks/plugins/rive_common/ios`)
 
 EXTERNAL SOURCES:
   file_selector_ios:
@@ -22,12 +25,15 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/integration_test/ios"
   openriver_api:
     :path: ".symlinks/plugins/openriver_api/ios"
+  rive_common:
+    :path: ".symlinks/plugins/rive_common/ios"
 
 SPEC CHECKSUMS:
   file_selector_ios: ec57ec07954363dd730b642e765e58f199bb621a
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   integration_test: 4a889634ef21a45d28d50d622cf412dc6d9f586e
   openriver_api: 09e818a4ee8edbdebd4d750b5b5063e636338846
+  rive_common: dd421daaf9ae69f0125aa761dd96abd278399952
 
 PODFILE CHECKSUM: 3c63482e143d1b91d2d2560aee9fb04ecc74ac7e
 

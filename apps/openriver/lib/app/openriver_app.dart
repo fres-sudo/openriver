@@ -1,7 +1,9 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:openriver_api/openriver_api.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
 
+import 'design_system.dart';
 import '../features/library/library_cubit.dart';
 import '../features/library/library_page.dart';
 
@@ -17,22 +19,12 @@ class OpenRiverApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    ThemeData theme(Brightness brightness) => ThemeData(
-      useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xFF146B58),
-        brightness: brightness,
-      ),
-      inputDecorationTheme: const InputDecorationTheme(
-        border: OutlineInputBorder(),
-      ),
-    );
-
-    return MaterialApp(
+    return ShadApp(
       title: 'OpenRiver',
+      color: OpenRiverDesignSystem.lightTheme.colorScheme.primary,
       debugShowCheckedModeBanner: false,
-      theme: theme(Brightness.light),
-      darkTheme: theme(Brightness.dark),
+      theme: OpenRiverDesignSystem.lightTheme,
+      darkTheme: OpenRiverDesignSystem.darkTheme,
       home: BlocProvider(
         create: (_) =>
             LibraryCubit(core: core, databasePath: databasePath)..open(),

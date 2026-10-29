@@ -4,11 +4,14 @@ PODS:
   - FlutterMacOS (1.0.0)
   - openriver_api (0.1.0):
     - FlutterMacOS
+  - rive_common (0.0.1):
+    - FlutterMacOS
 
 DEPENDENCIES:
   - file_selector_macos (from `Flutter/ephemeral/.symlinks/plugins/file_selector_macos/macos`)
   - FlutterMacOS (from `Flutter/ephemeral`)
   - openriver_api (from `Flutter/ephemeral/.symlinks/plugins/openriver_api/macos`)
+  - rive_common (from `Flutter/ephemeral/.symlinks/plugins/rive_common/macos`)
 
 EXTERNAL SOURCES:
   file_selector_macos:
@@ -17,11 +20,14 @@ EXTERNAL SOURCES:
     :path: Flutter/ephemeral
   openriver_api:
     :path: Flutter/ephemeral/.symlinks/plugins/openriver_api/macos
+  rive_common:
+    :path: Flutter/ephemeral/.symlinks/plugins/rive_common/macos
 
 SPEC CHECKSUMS:
   file_selector_macos: 9e9e068e90ebee155097d00e89ae91edb2374db7
   FlutterMacOS: d0db08ddef1a9af05a5ec4b724367152bb0500b1
   openriver_api: dee932c706306ddef9a45d5d637d1c2a85141ba2
+  rive_common: ea79040f86acf053a2d5a75a2506175ee39796a5
 
 PODFILE CHECKSUM: 54d867c82ac51cbd61b565781b9fada492027009
 

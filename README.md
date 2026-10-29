@@ -35,11 +35,11 @@ apps/openriver/                 Shared Flutter app; five native platform project
 packages/openriver_api/         Typed Dart facade, generated FFI, native packaging
 crates/openriver_bridge/        Application commands exposed through flutter_rust_bridge
 crates/openriver_domain/        Canonical cards, integer chip units, action vocabulary
-crates/openriver_parser/        Input preflight and parser error boundary (no room parser yet)
-crates/openriver_storage/       SQLx/SQLite owner and embedded migrations
+crates/openriver_parser/        Bounded synthetic hand-history parser and diagnostics
+crates/openriver_storage/       SQLx/SQLite owner, migrations, and import persistence
 crates/openriver_analytics/     Validated opportunity counts and missing-sample semantics
 contracts/                     Boundary for future public cloud contracts
-fixtures/hands/                Boundary for synthetic parser fixtures
+fixtures/hands/                Synthetic parser fixtures and expected results
 ```
 
 Dart uses **Pub Workspaces + Melos 8.2.1**. Workspace membership, shared resolution, and Melos scripts live in the root `pubspec.yaml`; there is deliberately no legacy `melos.yaml`. The repository has one Dart lockfile and one Cargo lockfile. Flutter state uses `flutter_bloc`/Cubit. Rust owns all database access and poker rules.

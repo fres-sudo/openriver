@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:openriver/app/openriver_app.dart';
 import 'package:openriver/features/library/library_cubit.dart';
 import 'package:openriver_api/openriver_api.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
 
 class FakeCore implements OpenRiverCore {
   FakeCore(this.open, {this.import});
@@ -115,10 +116,32 @@ void main() {
         databasePath: () async => 'test.sqlite3',
       ),
     );
+    expect(find.byType(ShadApp), findsOneWidget);
+    expect(find.byType(ShadBadge), findsOneWidget);
+    expect(find.byType(ShadCard), findsOneWidget);
+    expect(find.byType(ShadProgress), findsOneWidget);
     expect(find.text('Opening your library…'), findsOneWidget);
     completion.complete(info);
     await tester.pumpAndSettle();
+    expect(find.byType(ShadButton), findsOneWidget);
     expect(find.text('Your library is ready'), findsOneWidget);
+  });
+
+  testWidgets('system dark appearance uses the Shad dark theme', (
+    tester,
+  ) async {
+    tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
+    addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+    await tester.pumpWidget(
+      OpenRiverApp(
+        core: FakeCore(() async => info),
+        databasePath: () async => 'test.sqlite3',
+      ),
+    );
+    await tester.pumpAndSettle();
+    final theme = ShadTheme.of(tester.element(find.text('OpenRiver')));
+    expect(theme.brightness, Brightness.dark);
+    expect(find.byType(ShadButton), findsOneWidget);
   });
 
   testWidgets('failed startup can retry without displaying private details', (

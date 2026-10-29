@@ -9,6 +9,11 @@ dev_dependencies:
   melos: 8.2.1
   flutter_lints: 6.0.0
 
+# shadcn_ui 0.2.6 needs source-level fixes for Flutter 3.41.
+dependency_overrides:
+  shadcn_ui:
+    path: third_party/shadcn_ui
+
 # Melos 8 configuration lives here, alongside the Dart workspace.
 melos:
   scripts:
