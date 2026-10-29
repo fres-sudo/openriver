@@ -14,6 +14,8 @@ The Linux job passed `cargo test --workspace --locked` but `flutter build linux`
 
 After the Android workflow and Windows parser-test edits, `dart run melos run check` passed locally on macOS, including formatting, analysis, Flutter tests, Clippy, and Rust workspace tests. This check preceded the Linux-only CMake option.
 
+Run 1's `quality` job passed on Ubuntu, including the full check and generated-binding comparison. The iOS job passed its simulator build on macOS. Neither result exercises a mobile file chooser or native import interaction. The macOS packaged smoke test was still running when these results were recorded.
+
 ## Flutter design system, 2026-10-29
 
 `dart run melos run check` passed on the working tree after the library screen moved to `shadcn_ui`: Dart formatting and analysis, 10 Flutter widget tests, Rust Clippy, and Rust workspace tests. The widget tests cover startup, retry, import reporting, system dark appearance, and layouts at 375×812, 812×375, and 1440×900 logical pixels with 2× text scaling. `flutter build macos --debug` produced a native app bundle, and `git diff --check` passed. A comparison with the published `shadcn_ui` 0.2.6 package found only the two documented runtime compatibility edits in the vendored copy. The app was not launched for this increment, so the updated screen has no new visual or native chooser interaction result.

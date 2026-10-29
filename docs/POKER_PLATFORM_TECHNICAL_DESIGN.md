@@ -7,6 +7,8 @@
 
 > **Scope:** This document is a technical plan, not evidence that individual provider policies, licenses, pricing, or SDK compatibility have been verified. Pin dependency versions after the initial spikes. All AI-assisted implementation must be reviewed and tested.
 
+> **Hosted-service update, 2026-10-29:** [ADR 0002](adr/0002-hosted-service-foundation.md) records the accepted Bun, Elysia, Better Auth, Drizzle, self-hosted PostgreSQL, and Docker Compose foundation. Its decisions supersede this document's earlier Hono, Node.js, Supabase Auth, and managed-PostgreSQL proposals. Cloud endpoint lists and schemas below remain illustrative until a reviewed public contract is published.
+
 ---
 
 ## 0. Executive decisions
