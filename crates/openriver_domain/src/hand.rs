@@ -83,6 +83,11 @@ pub struct Hand {
     pub pots: Vec<Pot>,
     pub awards: Vec<Award>,
     pub rake: Chips,
+    /// Seat holding the dealer button. It may be unoccupied (a dead button).
+    /// `None` means the source did not say, so positions cannot be derived;
+    /// hands stored before this field existed deserialize to `None`.
+    #[serde(default)]
+    pub button_seat: Option<u8>,
 }
 
 #[derive(Clone, Debug, Error, PartialEq, Eq)]
@@ -137,6 +142,12 @@ pub fn validate_hand(hand: &Hand) -> Result<(), HandError> {
         || hand.provenance.parser_version.is_empty()
     {
         return Err(HandError::InvalidDefinition);
+    }
+    if hand
+        .button_seat
+        .is_some_and(|seat| seat == 0 || seat > g.table_capacity)
+    {
+        return Err(HandError::InvalidSeat);
     }
     let mut seats = BTreeMap::new();
     let mut cards = Vec::new();
@@ -510,6 +521,7 @@ mod tests {
                 },
             ],
             rake: Chips(0),
+            button_seat: Some(1),
         }
     }
 
