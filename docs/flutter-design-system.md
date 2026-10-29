@@ -35,6 +35,10 @@ Use Flutter `Text`, `Icon`, `SafeArea`, `Column`, `LayoutBuilder`, `Semantics`, 
 - Give icons accompanying text no separate spoken label. Give icon-only actions a semantic label.
 - Preserve system light/dark preference. Check both themes when adding a component.
 
+## Planned UI kit
+
+[ADR 0003](adr/0003-ui-kit-and-app-shell.md) proposes moving these foundations into `packages/openriver_ui`, adding a responsive app shell, go_router navigation, localization, and the `context.app` accessor. Until it is implemented, the rules on this page describe the current app.
+
 ## Current migration
 
 The library page uses Shad components for its badge, card, actions, alerts, progress, and file-picker error toast. Library startup, import, retry, and privacy behavior remain owned by `LibraryCubit`.
