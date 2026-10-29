@@ -79,3 +79,15 @@ On an Apple Silicon Mac running macOS 26.6.2, a separate Rust debug test importe
 ## Canonical hand accounting, 2026-10-23
 
 `cargo fmt --all`, `cargo test --workspace`, and `cargo clippy --workspace --all-targets -- -D warnings` passed after adding the canonical hand model. Domain tests cover the hand-audited side pot and uncalled return, duplicate known cards, invalid actions/stacks, ineligible awards, missing payouts, and unmatched contributions. The synthetic text fixture has not yet passed through a parser or SQLite, so these checks do not establish import behavior.
+
+## Import progress and cancellation, 2026-10-29
+
+`dart run melos run check` passed locally on macOS with the FVM-pinned Flutter 3.41.2 and Rust 1.88.0: formatting, analysis, 11 Flutter widget tests, Clippy, and the Rust workspace tests (6 storage tests, 21 parser tests). New coverage: a storage test that cancels a 600-hand import after the second progress report and asserts no rows or batch remain and that a later import of the same hands succeeds, and a widget test for the progress text, Cancel button, and cancelled message. This is not a packaged-app or device run, and large-file cancellation latency has not been measured.
+
+The ignored 10,000-hand storage test was rerun through the progress-reporting import path on macOS (Apple Silicon, Rust 1.88.0, `--release`, Rust core only, no UI): 4,779,999 source bytes, parse 68 ms, first write 203 ms, repeat import 77 ms, 10,000 rows then 10,000 duplicates. Progress is reported every 250 hands (41 reports). This is a Rust-level timing, not a packaged-app or mobile measurement, and memory was not measured.
+
+## Statistics engine, 2026-10-29
+
+`openriver_analytics` now holds a hand analyzer (per-decision bet level, amount to call, pot, live opponents), position derivation, 21 versioned statistic definitions ([stats-definitions.md](stats-definitions.md)), mergeable per-player aggregates with Wilson intervals, hand filters, and a `StatsEngine`. The canonical `Hand` gained `button_seat` (optional, defaulting to unknown for hands stored earlier); the synthetic adapter now requires a well-formed `is the button` clause and the parser suite grew to 22 tests.
+
+`cargo fmt`, `cargo clippy --workspace --all-targets -D warnings` and `cargo test --workspace --locked` passed locally on macOS (Rust 1.88.0): 38 analytics tests (17 golden, 11 property of which 10 run 1,000 random hands each, 7 position and 3 unit), 22 parser, 6 storage. Five deliberate mutations of the engine were each caught. Property tests use a test-only simulator whose hands are validated by the real `validate_hand`; they show internal consistency and agreement with a naive oracle, not agreement with another tracker's numbers. The Dart side was not rebuilt for this change.

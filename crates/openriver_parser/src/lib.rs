@@ -269,13 +269,12 @@ fn parse_hand(
         .strip_prefix("Table '")
         .and_then(|v| v.split_once("' "))
         .ok_or(malformed)?;
-    let capacity = table
-        .1
-        .split_once("-max Seat #")
-        .ok_or(malformed)?
-        .0
-        .parse::<u8>()
-        .map_err(|_| malformed)?;
+    let (capacity, button) = table.1.split_once("-max Seat #").ok_or(malformed)?;
+    let capacity = capacity.parse::<u8>().map_err(|_| malformed)?;
+    let button_seat = button
+        .strip_suffix(" is the button")
+        .and_then(|seat| seat.parse::<u8>().ok())
+        .ok_or(malformed)?;
     let mut hand = Hand {
         game: GameDefinition {
             variant: GameVariant::NoLimitHoldem,
@@ -302,6 +301,7 @@ fn parse_hand(
         pots: Vec::new(),
         awards: Vec::new(),
         rake: Chips(0),
+        button_seat: Some(button_seat),
     };
     let mut cursor = 2;
     while let Some(line) = lines.get(cursor).copied() {
@@ -740,6 +740,28 @@ mod tests {
             Err(ImportError::UnsupportedFormat)
         );
     }
+    #[test]
+    fn button_seat_is_parsed_and_malformed_button_lines_are_rejected() {
+        let source = include_str!("../../../fixtures/hands/golden_side_pot.txt");
+        let parsed = parse(source.as_bytes()).unwrap();
+        assert_eq!(parsed.hands[0].button_seat, Some(1));
+        for bad in [
+            "Seat #1 is the dealer",
+            "Seat #x is the button",
+            "Seat #11 is the button",
+            "Seat #0 is the button",
+            "Seat # is the button",
+        ] {
+            let mutated = source.replace("Seat #1 is the button", bad);
+            let result = parse(mutated.as_bytes()).unwrap();
+            assert_eq!(
+                (result.hands.len(), result.diagnostics.len()),
+                (0, 1),
+                "{bad}"
+            );
+        }
+    }
+
     #[test]
     fn golden_side_pot_is_parsed_and_reconciled() {
         let result = parse(include_bytes!(

@@ -8,8 +8,11 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `fmt`, `fmt`, `from`
 
+/// Asks the running import to stop; its uncommitted batch is discarded.
+void cancelImport() => RustLib.instance.api.crateApiLibraryCancelImport();
+
 /// The selected path is used only for this bounded read and is never returned in errors.
-Future<ImportSummary> importHandHistory({
+Stream<ImportEvent> importHandHistory({
   required String databasePath,
   required String filePath,
 }) => RustLib.instance.api.crateApiLibraryImportHandHistory(
@@ -36,6 +39,7 @@ enum CoreError {
   fileUnavailable,
   invalidSource,
   unsupportedFormat,
+  cancelled,
 }
 
 class CoreStatus {
@@ -85,6 +89,31 @@ class ImportDiagnostic {
           startLine == other.startLine &&
           endLine == other.endLine &&
           code == other.code;
+}
+
+/// Streamed during an import. The last event carries the `summary`; earlier ones only progress.
+class ImportEvent {
+  final int processed;
+  final int total;
+  final ImportSummary? summary;
+
+  const ImportEvent({
+    required this.processed,
+    required this.total,
+    this.summary,
+  });
+
+  @override
+  int get hashCode => processed.hashCode ^ total.hashCode ^ summary.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ImportEvent &&
+          runtimeType == other.runtimeType &&
+          processed == other.processed &&
+          total == other.total &&
+          summary == other.summary;
 }
 
 class ImportSummary {

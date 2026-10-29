@@ -19,7 +19,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   });
 
   @protected
+  AnyhowException dco_decode_AnyhowException(dynamic raw);
+
+  @protected
+  RustStreamSink<ImportEvent> dco_decode_StreamSink_import_event_Sse(
+    dynamic raw,
+  );
+
+  @protected
   String dco_decode_String(dynamic raw);
+
+  @protected
+  ImportSummary dco_decode_box_autoadd_import_summary(dynamic raw);
 
   @protected
   CoreError dco_decode_core_error(dynamic raw);
@@ -34,6 +45,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   ImportDiagnostic dco_decode_import_diagnostic(dynamic raw);
 
   @protected
+  ImportEvent dco_decode_import_event(dynamic raw);
+
+  @protected
   ImportSummary dco_decode_import_summary(dynamic raw);
 
   @protected
@@ -46,6 +60,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   String? dco_decode_opt_String(dynamic raw);
 
   @protected
+  ImportSummary? dco_decode_opt_box_autoadd_import_summary(dynamic raw);
+
+  @protected
   int dco_decode_u_32(dynamic raw);
 
   @protected
@@ -55,7 +72,20 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void dco_decode_unit(dynamic raw);
 
   @protected
+  AnyhowException sse_decode_AnyhowException(SseDeserializer deserializer);
+
+  @protected
+  RustStreamSink<ImportEvent> sse_decode_StreamSink_import_event_Sse(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   String sse_decode_String(SseDeserializer deserializer);
+
+  @protected
+  ImportSummary sse_decode_box_autoadd_import_summary(
+    SseDeserializer deserializer,
+  );
 
   @protected
   CoreError sse_decode_core_error(SseDeserializer deserializer);
@@ -68,6 +98,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   ImportDiagnostic sse_decode_import_diagnostic(SseDeserializer deserializer);
+
+  @protected
+  ImportEvent sse_decode_import_event(SseDeserializer deserializer);
 
   @protected
   ImportSummary sse_decode_import_summary(SseDeserializer deserializer);
@@ -84,6 +117,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   String? sse_decode_opt_String(SseDeserializer deserializer);
 
   @protected
+  ImportSummary? sse_decode_opt_box_autoadd_import_summary(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   int sse_decode_u_32(SseDeserializer deserializer);
 
   @protected
@@ -96,7 +134,25 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   bool sse_decode_bool(SseDeserializer deserializer);
 
   @protected
+  void sse_encode_AnyhowException(
+    AnyhowException self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_StreamSink_import_event_Sse(
+    RustStreamSink<ImportEvent> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_String(String self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_box_autoadd_import_summary(
+    ImportSummary self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_core_error(CoreError self, SseSerializer serializer);
@@ -112,6 +168,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     ImportDiagnostic self,
     SseSerializer serializer,
   );
+
+  @protected
+  void sse_encode_import_event(ImportEvent self, SseSerializer serializer);
 
   @protected
   void sse_encode_import_summary(ImportSummary self, SseSerializer serializer);
@@ -130,6 +189,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_opt_String(String? self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_opt_box_autoadd_import_summary(
+    ImportSummary? self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_u_32(int self, SseSerializer serializer);

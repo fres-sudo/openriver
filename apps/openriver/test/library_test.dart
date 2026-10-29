@@ -9,9 +9,13 @@ import 'package:openriver_api/openriver_api.dart';
 import 'package:openriver_ui/openriver_ui.dart';
 
 class FakeCore implements OpenRiverCore {
-  FakeCore(this.open, {this.import});
+  FakeCore(this.open, {this.import, this.progress = const []});
   final Future<LibraryInfo> Function() open;
   final Future<HandImportReport> Function()? import;
+  final List<ImportProgress> progress;
+  var cancelRequests = 0;
+  @override
+  void cancelImport() => cancelRequests++;
   @override
   Future<LibraryInfo> initializeLibrary(String databasePath) => open();
   @override
@@ -19,17 +23,20 @@ class FakeCore implements OpenRiverCore {
   @override
   Future<HandImportReport> importHandHistory(
     String databasePath,
-    String filePath,
-  ) async =>
-      import?.call() ??
-      const HandImportReport(
-        parsed: 0,
-        imported: 0,
-        duplicates: 0,
-        rejected: 0,
-        storedHandCount: 0,
-        diagnostics: [],
-      );
+    String filePath, {
+    void Function(ImportProgress progress)? onProgress,
+  }) async {
+    progress.forEach(onProgress ?? (_) {});
+    return import?.call() ??
+        const HandImportReport(
+          parsed: 0,
+          imported: 0,
+          duplicates: 0,
+          rejected: 0,
+          storedHandCount: 0,
+          diagnostics: [],
+        );
+  }
 }
 
 const info = LibraryInfo(coreVersion: '0.1.0', schemaVersion: 2);
@@ -108,6 +115,41 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('1 stored hands'), findsOneWidget);
   });
+  testWidgets('importing shows progress and a cancel that reports no change', (
+    tester,
+  ) async {
+    final running = Completer<HandImportReport>();
+    final core = FakeCore(
+      () async => info,
+      import: () => running.future,
+      progress: const [ImportProgress(processed: 250, total: 1000)],
+    );
+    await tester.pumpWidget(
+      OpenRiverApp(core: core, databasePath: () async => 'test.sqlite3'),
+    );
+    await tester.pumpAndSettle();
+    final cubit = tester
+        .element(find.text('Import hand history'))
+        .read<LibraryCubit>();
+    final importing = cubit.importPath('/private/player/history.txt');
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('Importing hands… 250 of 1000'), findsOneWidget);
+    await tester.ensureVisible(find.text('Cancel import'));
+    await tester.pump();
+    await tester.tap(find.text('Cancel import'));
+    expect(core.cancelRequests, 1);
+    running.completeError(const CoreException(CoreFailure.cancelled));
+    await importing;
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Import cancelled. Nothing from that file was added.'),
+      findsOneWidget,
+    );
+    expect(find.text('0 stored hands'), findsOneWidget);
+    expect(find.text('Cancel import'), findsNothing);
+  });
+
   testWidgets('opening a library shows progress then ready', (tester) async {
     final completion = Completer<LibraryInfo>();
     await tester.pumpWidget(

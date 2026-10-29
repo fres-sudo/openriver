@@ -14,12 +14,14 @@ final class LibraryReady extends LibraryState {
     this.info, {
     required this.storedCount,
     this.importing = false,
+    this.progress,
     this.report,
     this.importError,
   });
   final LibraryInfo info;
   final int storedCount;
   final bool importing;
+  final ImportProgress? progress;
   final HandImportReport? report;
   final String? importError;
 }
@@ -60,6 +62,12 @@ class LibraryCubit extends Cubit<LibraryState> {
     }
   }
 
+  /// Stops the running import. The cancelled file leaves no hands behind.
+  void cancelImport() {
+    final current = state;
+    if (current is LibraryReady && current.importing) core.cancelImport();
+  }
+
   Future<void> importPath(String filePath) async {
     final current = state;
     if (current is! LibraryReady || current.importing || isClosed) return;
@@ -74,6 +82,18 @@ class LibraryCubit extends Cubit<LibraryState> {
       final report = await core.importHandHistory(
         await databasePath(),
         filePath,
+        onProgress: (progress) {
+          if (!isClosed) {
+            emit(
+              LibraryReady(
+                current.info,
+                storedCount: current.storedCount,
+                importing: true,
+                progress: progress,
+              ),
+            );
+          }
+        },
       );
       if (!isClosed) {
         emit(
@@ -86,6 +106,8 @@ class LibraryCubit extends Cubit<LibraryState> {
       }
     } catch (error) {
       final message = switch (error) {
+        CoreException(failure: CoreFailure.cancelled) =>
+          'Import cancelled. Nothing from that file was added.',
         CoreException(failure: CoreFailure.unsupportedFormat) =>
           'This hand-history format is not supported yet.',
         CoreException(failure: CoreFailure.invalidSource) =>
