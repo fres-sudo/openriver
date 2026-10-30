@@ -45,3 +45,14 @@ Also tracked per player: postflop action counts (bets, raises, calls, checks, fo
 - Property tests over randomly played, validator-checked hands (`properties.rs`): chip conservation, decision well-formedness, position consistency, logical implications between stats (e.g. every raise statistic implies PFR, PFR implies VPIP), an independent naive oracle for VPIP, PFR, saw-flop, invested, collected and 3-bet, merge and ordering independence, JSON round trips, legacy hands without a button seat, and filter behaviour.
 - A coverage test asserts the random hands actually reach flops, rivers, all-ins, side pots, 3-bets and 4-bets, returns and split pots.
 - Mutation spot checks: deliberately breaking five definitions each made the suite fail.
+
+## Hand evaluation and equity
+
+[`evaluator.rs`](../crates/openriver_analytics/src/evaluator.rs) ranks the best five of five to seven cards as one comparable `HandRank` (suits never break ties; the wheel plays as five-high). [`equity.rs`](../crates/openriver_analytics/src/equity.rs) enumerates every runout for two to nine known hands and a board of zero, three, four or five cards. Shares are exact integers (a pot is 2,520 units, so any split of up to nine ways divides evenly); a deterministic seeded sampler exists for spots too large to enumerate and is never substituted silently.
+
+Verification beyond examples:
+
+- All 2,598,960 five-card hands produce the known category counts, and all 133,784,560 seven-card hands do too (the seven-card run is `#[ignore]`d; run it with `cargo test -p openriver_analytics --release -- --ignored`).
+- An independent naive scorer, written a different way, is compared against the evaluator on every five-card hand: sorted by the naive score, the evaluator's ranks must be equal where it is equal and strictly increasing otherwise, and there must be exactly 7,462 distinct values.
+- Seven-card ranks equal the best of all 21 five-card subsets on random hands.
+- Equity: a hand-audited turn spot (7 wins in 44 runouts), chopped boards, conservation of the pot on every spot, invariance under player order and suit renaming, and bounds on aces against kings over all 1,712,304 preflop runouts.
