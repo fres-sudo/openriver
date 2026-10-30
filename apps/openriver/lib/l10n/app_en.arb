@@ -1,0 +1,83 @@
+{
+  "@@locale": "en",
+  "appTitle": "OpenRiver",
+
+  "navLibrary": "Library",
+  "navHands": "Hands",
+  "navSettings": "Settings",
+
+  "importAction": "Import hand history",
+  "@importAction": { "description": "Shell primary action and empty-state button that opens the file chooser." },
+
+  "libraryTitle": "Library",
+  "libraryDescription": "Post-session review, stored on this device. No account needed.",
+  "libraryOpening": "Opening your library…",
+  "libraryOpenFailedTitle": "Let’s try that again",
+  "retry": "Try again",
+  "libraryReady": "Your library is ready",
+  "storedHands": "{count, plural, =1{1 stored hand} other{{count} stored hands}}",
+  "@storedHands": { "placeholders": { "count": { "type": "int" } } },
+  "libraryEmptyTitle": "No hands yet",
+  "libraryEmptyDescription": "Import a hand history file exported after your session to start your library.",
+  "lastImport": "Last import: imported {imported}, duplicates {duplicates}, rejected {rejected}.",
+  "@lastImport": {
+    "placeholders": {
+      "imported": { "type": "int" },
+      "duplicates": { "type": "int" },
+      "rejected": { "type": "int" }
+    }
+  },
+  "viewImportReport": "View report",
+
+  "importTitle": "Import hand history",
+  "importProgressLabel": "Importing hands",
+  "importProgressUnknown": "Importing hands…",
+  "importProgress": "Importing hands… {processed} of {total}",
+  "@importProgress": {
+    "placeholders": {
+      "processed": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "importContinuesHint": "You can close this; the import keeps running.",
+  "cancelImport": "Cancel import",
+  "importSummary": "Imported {imported}, duplicates {duplicates}, rejected {rejected}.",
+  "@importSummary": {
+    "placeholders": {
+      "imported": { "type": "int" },
+      "duplicates": { "type": "int" },
+      "rejected": { "type": "int" }
+    }
+  },
+  "importFailedTitle": "The import did not finish",
+  "rejectedHandsHeading": "Rejected hands",
+  "rejectedHand": "Hand {handId}, lines {startLine}–{endLine}: {code}",
+  "@rejectedHand": {
+    "description": "One rejected hand. {code} is the parser's stable diagnostic code.",
+    "placeholders": {
+      "handId": { "type": "String" },
+      "startLine": { "type": "int" },
+      "endLine": { "type": "int" },
+      "code": { "type": "String" }
+    }
+  },
+  "unknownHand": "unknown",
+  "chooseAnotherFile": "Choose another file",
+  "done": "Done",
+  "fileChooserFailed": "The file chooser could not open. Please try again.",
+
+  "handsTitle": "Hands",
+  "handsDescription": "Every hand you have imported.",
+  "handsComingTitle": "Browsing hands is coming",
+  "handsComingDescription": "{count, plural, =1{1 hand is stored.} other{{count} hands are stored.}} A searchable list arrives in a later version.",
+  "@handsComingDescription": { "placeholders": { "count": { "type": "int" } } },
+
+  "settingsTitle": "Settings",
+  "settingsDescription": "About this copy of OpenRiver.",
+  "aboutHeading": "About",
+  "coreVersion": "Core version {version}",
+  "@coreVersion": { "placeholders": { "version": { "type": "String" } } },
+  "schemaVersion": "Library schema {version}",
+  "@schemaVersion": { "placeholders": { "version": { "type": "int" } } },
+  "privacyNote": "Your hands stay on this device. OpenRiver needs no account or network connection."
+}

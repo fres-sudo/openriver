@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:openriver/app/openriver_app.dart';
 import 'package:openriver/features/library/library_cubit.dart';
+import 'package:openriver/features/library/library_page.dart';
 import 'package:openriver_api/openriver_api.dart';
 import 'package:path/path.dart' as path;
 
@@ -88,9 +89,7 @@ void main() {
         (i) => template.replaceFirst('Hand #2001', 'Hand #${10000 + i}'),
       ).join('\n'),
     );
-    final cubit = tester
-        .element(find.text('Import hand history'))
-        .read<LibraryCubit>();
+    final cubit = tester.element(find.byType(LibraryPage)).read<LibraryCubit>();
     final importing = cubit.importPath(batch.path);
     await tester.pump();
     expect(find.text('Importing hands…'), findsOneWidget);
@@ -129,15 +128,20 @@ Ada: calls \$0.01
     ) {
       await tester.pump(const Duration(milliseconds: 100));
     }
-    final cubit = tester
-        .element(find.text('Import hand history'))
-        .read<LibraryCubit>();
+    final cubit = tester.element(find.byType(LibraryPage)).read<LibraryCubit>();
     await cubit.importPath(history.path);
     await tester.pump();
+    expect(
+      find.text('Last import: imported 1, duplicates 0, rejected 1.'),
+      findsOneWidget,
+    );
+    expect(find.text('1 stored hand'), findsOneWidget);
+    await tester.tap(find.text('View report'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
     expect(find.text('Imported 1, duplicates 0, rejected 1.'), findsOneWidget);
     expect(find.textContaining('Hand 3002'), findsOneWidget);
     expect(find.textContaining('IncompleteHand'), findsOneWidget);
-    expect(find.text('1 stored hands'), findsOneWidget);
 
     await core.initializeLibrary(database);
     expect(await core.storedHandCount(database), 1);

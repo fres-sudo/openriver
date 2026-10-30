@@ -1,7 +1,7 @@
 # ADR 0003: UI kit, app shell, and responsive layout
 
 Date: 2026-10-29
-Status: Accepted; implementation in progress (steps 1–3 complete)
+Status: Accepted; implementation in progress (steps 1–4 complete)
 Scope: `packages/openriver_ui`, the shared Flutter app shell, routing, and localization in `apps/openriver`
 
 ## Decision summary
@@ -151,7 +151,7 @@ The behaviors below are requirements. Each has a test.
 - **Motion.** The first implementation has no navigation animation; collapsing the sidebar and changing form are immediate. Any later transition uses `RiverDurations` and is disabled when `MediaQuery.disableAnimations` is true.
 - **Direction.** All spacing is directional. The navigation sits on the start side in right-to-left locales.
 - **Targets.** All interactive navigation is at least 48 by 48 logical pixels.
-- **Desktop minimum.** Desktop windows have a minimum size of 360 by 560, which avoids unusable layouts below the compact class.
+- **Desktop minimum.** Desktop windows have a minimum client size of 360 by 560 logical pixels, which avoids unusable layouts below the compact class. Each runner sets it: `contentMinSize` on macOS, GTK geometry hints on Linux, and `WM_GETMINMAXINFO` on Windows.
 
 The sidebar's collapsed state is kept for the session. Persisting it across launches is deferred until there is a local preferences store.
 
@@ -161,8 +161,10 @@ Import is reached from `RiverShell.primaryAction` and from contextual page actio
 
 1. Choosing the action opens the platform file chooser.
 2. The existing `LibraryCubit` imports through Rust.
-3. Progress shows in the action's busy state and on the Library page.
-4. The import report opens with `showRiverOverlay`: a bottom sheet on compact windows and a dialog otherwise.
+3. An overlay opens with `showRiverOverlay`: a bottom sheet on compact windows and a dialog otherwise. It shows progress with a cancel action, then the report or the failure with "Choose another file". Closing it does not stop the import.
+4. While importing, the action is disabled and the Library page also shows progress and cancel. After an import, the Library page summarizes it and can reopen the report.
+
+The file chooser is injected into `OpenRiverApp` as a `HandHistoryChooser`, so widget tests can supply paths without platform channels. The overlay never shows file paths or contents.
 
 Import logic stays in `LibraryCubit`. An import-history route can later be added under `/library/imports` without changing navigation.
 
@@ -180,11 +182,11 @@ The routes use `StatefulShellRoute.indexedStack`, with one branch per destinatio
 
 ### 7. Localization
 
-The app uses Flutter's `gen-l10n` with ARB files in `apps/openriver/lib/l10n`, starting with English. Generated Dart is checked in, matching the bridge-code policy. The check gate verifies that it is up to date. `ShadApp.router` receives the app, kit, and Flutter localization delegates.
+The app uses Flutter's `gen-l10n` with ARB files in `apps/openriver/lib/l10n`, starting with English. Generated Dart in `lib/l10n/generated` is checked in, matching the bridge-code policy. `flutter: generate: true` regenerates it on every `pub get`, build, and test run, so a stale copy cannot be built; no separate check step is needed. `ShadApp.router` receives the app, kit, and Flutter localization delegates.
 
 The kit's own strings, such as "Collapse sidebar", "Navigation", and "Close", come from `RiverLocalizations`. It has English defaults and can be overridden by the app. Kit widgets never hard-code user-facing English.
 
-New and touched UI uses `context.app.localizations`. Existing Library strings move to ARB in a separate change, to avoid conflicts with concurrent import work.
+All page, shell, and overlay strings use `context.app.localizations`. The user-facing error messages produced by `LibraryCubit` are still English literals; they move to ARB in a separate change, to avoid conflicts with concurrent import work in that file.
 
 ### 8. Testing
 
@@ -227,8 +229,8 @@ Each step lands with its tests and a Conventional Commit.
 1. Create the package with foundation tokens, `RiverThemes`, `RiverLayout`/window classes, the `context.app` accessor, and `RiverLocalizations`. Add the import-rule check.
 2. Add `RiverPage`, `RiverPageHeader`, `RiverStateView`, and `RiverButton`. ShadButton 0.2.6 lacks keyboard activation, a 48-pixel target, and label wrapping. Adjust theme colors that fail WCAG AA contrast.
 3. Add `RiverShell` with bottom bar, rail, and sidebar, and the full widget-matrix, accessibility, keyboard, and state suites. Navigation items use `FocusableActionDetector` because shadcn_ui 0.2.6 has no navigation controls. The desktop minimum window size moves to step 4, because it is set in each platform runner.
-4. Wire up app localization (`gen-l10n`), go_router, Library/Hands/Settings branches, and Import as the shell action with the report overlay. Keep `library_page.dart` hosted with minimal change.
-5. Add goldens, the catalog example, the integration test update, and design-system documentation.
+4. Wire up app localization (`gen-l10n`), go_router, Library/Hands/Settings branches, Import as the shell action with the report overlay, system back, reselection, and the desktop minimum window size. Move the Library page to `RiverPage`, and update the packaged integration test for the new screens.
+5. Add goldens and the catalog example.
 
 ## Rollback
 

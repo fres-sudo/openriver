@@ -31,6 +31,10 @@ static int g_active_window_count = 0;
 
 using EnableNonClientDpiScaling = BOOL __stdcall(HWND hwnd);
 
+// Smallest client area, in logical pixels, that fits the app's layout.
+constexpr int kMinimumClientWidth = 360;
+constexpr int kMinimumClientHeight = 560;
+
 // Scale helper to convert logical scaler values to physical using passed in
 // scale factor
 int Scale(int source, double scale_factor) {
@@ -195,6 +199,22 @@ Win32Window::MessageHandler(HWND hwnd,
       SetWindowPos(hwnd, nullptr, newRectSize->left, newRectSize->top, newWidth,
                    newHeight, SWP_NOZORDER | SWP_NOACTIVATE);
 
+      return 0;
+    }
+    case WM_GETMINMAXINFO: {
+      // Smaller windows cannot fit the app's compact layout. The minimum is
+      // a client size in logical pixels, scaled for the window's monitor and
+      // grown by the window frame.
+      double scale_factor = FlutterDesktopGetDpiForHWND(hwnd) / 96.0;
+      RECT frame = {0, 0, Scale(kMinimumClientWidth, scale_factor),
+                    Scale(kMinimumClientHeight, scale_factor)};
+      AdjustWindowRectEx(&frame,
+                         static_cast<DWORD>(GetWindowLong(hwnd, GWL_STYLE)),
+                         FALSE,
+                         static_cast<DWORD>(GetWindowLong(hwnd, GWL_EXSTYLE)));
+      auto info = reinterpret_cast<MINMAXINFO*>(lparam);
+      info->ptMinTrackSize.x = frame.right - frame.left;
+      info->ptMinTrackSize.y = frame.bottom - frame.top;
       return 0;
     }
     case WM_SIZE: {

@@ -26,6 +26,8 @@ OpenRiver uses [shadcn_ui](https://pub.dev/packages/shadcn_ui/versions/0.2.6) as
 | App shell and themes | `ShadApp` with `RiverThemes` |
 | App frame and navigation | `RiverShell` with `RiverDestination`s and a `RiverShellAction` |
 | Page scaffold | `RiverPage` with a `RiverPageHeader` |
+| Sheets and dialogs | `showRiverOverlay` |
+| Icon-only actions | `RiverIconButton` |
 | Labeled actions | `RiverButton` (primary, secondary, outline, ghost, destructive) |
 | Loading, empty, and error regions | `RiverStateView` |
 | Content surfaces | `ShadCard` |
@@ -43,6 +45,8 @@ Use Flutter `Text`, `Icon`, `SafeArea`, `Column`, `LayoutBuilder`, `Semantics`, 
 - `RiverButton` wraps `ShadButton`. ShadButton 0.2.6 is 40 pixels tall, cannot wrap its label, and ignores Enter and Space. RiverButton gives a hit area of at least 48 pixels that grows with the text scale, wraps long labels, activates from the keyboard, and exposes one semantics node with its label, role, and state. It is disabled while `busy` or without `onPressed`.
 - `RiverPage` fills its region with the background color, applies safe areas, and centers content at a maximum width: `standard` (960), `wide` (1280, for lists and tables), or `full`. It uses 24 pixels of outer padding on compact regions and 48 otherwise. Scrollable pages use the primary scroll controller; set `scrollable: false` when the body scrolls itself.
 - `RiverPageHeader` marks its title as a semantic header. Actions sit beside the title, or wrap below it on compact pages.
+- `showRiverOverlay` shows a bottom sheet in compact windows and a centered dialog otherwise, switching if the window crosses compact. It has a titled header, a labeled 48-pixel close button, and a scrolling body, closes with Escape, the barrier, or system back, names its route for screen readers, and skips its transition with reduced motion. Use it instead of `showShadDialog` and `showShadSheet`, whose close button is a 20-pixel unlabeled target.
+- `RiverIconButton` is an icon-only action with a spoken label and tooltip.
 - `RiverStateView.loading`, `.empty`, and `.error` replace content in the same region. Error messages are live regions and must not contain raw errors, paths, or file contents.
 
 ### App shell
@@ -66,12 +70,16 @@ Use Flutter `Text`, `Icon`, `SafeArea`, `Column`, `LayoutBuilder`, `Semantics`, 
 - Give icons accompanying text no separate spoken label. Give icon-only actions a semantic label.
 - Preserve system light/dark preference. Check both themes when adding a component.
 
-## Planned UI kit work
+## App structure
 
-[ADR 0003](adr/0003-ui-kit-and-app-shell.md) also covers go_router navigation and app localization. They are not implemented yet, and the app does not use `RiverShell` yet. The library page still uses its own layout code; it moves to `RiverPage` when the shell hosts it.
+- `OpenRiverApp` provides `LibraryCubit` and the file chooser above a go_router `StatefulShellRoute` with Library, Hands, and Settings branches. `AppShell` wraps the branches in `RiverShell`; Import is its primary action.
+- Navigate with `AppRoutes` constants. Each destination keeps its own pages and scroll position. Reselecting a destination returns to its root page, or scrolls to the top if already there. System back goes to the library before leaving the app.
+- Strings come from `lib/l10n/app_en.arb` through `context.app.localizations`. Do not hard-code user-facing text in widgets.
+
+[ADR 0003](adr/0003-ui-kit-and-app-shell.md) lists the remaining kit work: goldens and a catalog example.
 
 ## Current migration
 
-The library page uses Shad components for its badge, card, actions, alerts, progress, and file-picker error toast. Library startup, import, retry, and privacy behavior remain owned by `LibraryCubit`.
+Every screen uses the kit. `LibraryCubit` still produces its own English error messages; they move to the ARB file separately.
 
-The 0.2.6 package predates Flutter 3.41. The workspace uses a copy in `third_party/shadcn_ui` with a minimal compatibility patch, selected by the root `dependency_overrides`. See that directory's README for the exact changes. Keep the kit's `^0.2.4` declaration and the local patch together until a deliberate package upgrade replaces them. A rollback restores the previous Material shell and screen alongside removal of the dependency, override, and vendored copy; it does not affect stored library data.
+The 0.2.6 package predates Flutter 3.41. The workspace uses a copy in `third_party/shadcn_ui` with a minimal compatibility patch, selected by the root `dependency_overrides`. See that directory's README for the exact changes. Keep the kit's `^0.2.4` declaration and the local patch together until a deliberate package upgrade replaces them. Removing shadcn_ui means removing the dependency, override, and vendored copy, and replacing the kit's Shad-based components; it does not affect stored library data.
