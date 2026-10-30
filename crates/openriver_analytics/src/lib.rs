@@ -2,6 +2,8 @@
 
 pub mod aggregate;
 pub mod analysis;
+pub mod equity;
+pub mod evaluator;
 #[cfg(test)]
 mod golden;
 pub mod position;
