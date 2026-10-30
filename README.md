@@ -24,6 +24,12 @@ flutter devices
 flutter run -d <device-id>
 ```
 
+### Run from VS Code
+
+Open the repository root in VS Code, install the recommended Flutter extension, and select a connected device or running emulator from the Flutter device picker in the status bar. In **Run and Debug**, choose **OpenRiver: Debug**, **OpenRiver: Profile**, or **OpenRiver: Release** (each uses the selected device), then press F5. Debug is the normal development mode; profile and release are useful for performance and production-like checks. iOS simulators support debug runs only; use a physical iOS device for profile or release. Desktop targets require their matching host OS, and the project has no web runner.
+
+The app currently has one entry point and no product flavors. These three launch choices are Flutter build modes, not separate app flavors. If additional flavors are added later, their native configurations and launch arguments will need to be added together.
+
 The native library is compiled and bundled automatically by Cargokit. No server, account, PostgreSQL, Docker, or running Rust service is needed. First builds download dependencies and Rust cross-compilation targets. Once dependencies are cached, the app itself works offline.
 
 `./scripts/bootstrap.sh` (macOS/Linux) and `./scripts/bootstrap.ps1` (Windows) also prefetch the Rust dependencies.
