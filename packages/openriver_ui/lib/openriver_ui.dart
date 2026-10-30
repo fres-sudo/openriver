@@ -10,6 +10,7 @@ export 'package:shadcn_ui/shadcn_ui.dart';
 
 export 'src/components/river_button.dart';
 export 'src/components/river_icon_button.dart';
+export 'src/components/river_step_slider.dart';
 export 'src/context.dart';
 export 'src/feedback/river_state_view.dart';
 export 'src/foundation/tokens.dart';
