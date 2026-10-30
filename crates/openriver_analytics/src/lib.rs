@@ -9,6 +9,7 @@ mod golden;
 pub mod position;
 #[cfg(test)]
 mod properties;
+pub mod replay;
 pub mod stats;
 #[cfg(test)]
 mod testkit;
