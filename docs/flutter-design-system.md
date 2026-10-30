@@ -37,6 +37,8 @@ OpenRiver uses [shadcn_ui](https://pub.dev/packages/shadcn_ui/versions/0.2.6) as
 | Progress | `ShadProgress` with a semantics label |
 | Future inputs and selection | `ShadInput`, `ShadSelect`, `ShadCheckbox`, and other `shadcn_ui` controls |
 | Icons | `LucideIcons` exported by `shadcn_ui` |
+| Choosing a whole number in a range, such as a replay step | `RiverStepSlider` |
+| Cards, chips, felt, and seats | The replay table widgets below |
 
 Use Flutter `Text`, `Icon`, `SafeArea`, `Column`, `LayoutBuilder`, `Semantics`, and similar primitives to compose these components. Do not add Material or Cupertino controls, themes, snackbars, buttons, cards, chips, input fields, or progress indicators to app screens. When a needed control is absent in this library version, build a small shared widget from Flutter primitives using the Shad theme, and document it here before using it across screens.
 
@@ -48,6 +50,18 @@ Use Flutter `Text`, `Icon`, `SafeArea`, `Column`, `LayoutBuilder`, `Semantics`, 
 - `showRiverOverlay` shows a bottom sheet in compact windows and a centered dialog otherwise, switching if the window crosses compact. It has a titled header, a labeled 48-pixel close button, and a scrolling body, closes with Escape, the barrier, or system back, names its route for screen readers, and skips its transition with reduced motion. Use it instead of `showShadDialog` and `showShadSheet`, whose close button is a 20-pixel unlabeled target.
 - `RiverIconButton` is an icon-only action with a spoken label and tooltip.
 - `RiverStateView.loading`, `.empty`, and `.error` replace content in the same region. Error messages are live regions and must not contain raw errors, paths, or file contents.
+- `RiverStepSlider` chooses a whole number from 0 to `max`. shadcn_ui 0.2.6's `ShadSlider` wraps Material's `Slider`, which asserts without a Material ancestor, so the kit builds its own from primitives. It is 48 pixels tall, responds to taps and drags, takes arrow keys, Home, and End while focused, mirrors in right-to-left layouts, and exposes slider semantics with a spoken value and increase and decrease actions.
+
+### Replay table widgets
+
+These are poker-specific, so they live in `apps/openriver/lib/features/replay/` rather than the kit. They take every color from `context.app.theme` through `TablePalette` and render replay snapshots exactly as Rust computed them; they derive no pots, positions, turn order, or legality.
+
+- `TablePalette` names the table colors. The felt is the primary color at 16% over the background. Card faces use the card surface. Black suits use the card foreground and red suits the destructive color, which `RiverThemes` keeps at AA contrast on that surface in both themes. Card backs use the primary color.
+- `PlayingCardWidget` draws a card face up (rank over suit glyph) or face down, sized by `width` at a 1.4 aspect ratio. Its glyphs follow the card size rather than the text scale. The glyph (♠ ♥ ♦ ♣) tells suits apart without relying on color. Pass `label` to give it a spoken name; seats describe their own cards instead.
+- `ChipStack` shows an amount beside a small stack of chips, for bets and the pot. Long amounts ellipsize rather than overflow.
+- `TableFelt` is the oval playing surface.
+- `SeatWidget` shows the name, position badge, stack, hole cards, last action, all-in and winnings badges, and a ring when the seat acts next. It is drawn at a 128-pixel design width and scaled to its slot. A folded seat dims its cards and mutes its text, keeping AA contrast. It is one semantics node, such as "Seat 3, Cy, button, stack $1.00, bet $2.00, all-in". `EmptySeat` marks an unoccupied seat.
+- `ReplayTable` places seats on an ellipse for 2–10 seats, numbered clockwise with the focus seat at bottom center. Each bet and the dealer button sit just outside their seat, on the line to the center. Narrow tables are tall ovals with the pot in a wrapping row above the felt. Wide tables put the pot and side pots on either side of the board. The table is a scaled drawing, so it caps text scale at 1 when tall and 1.5 when wide. The seats' spoken labels, the step announcement, the action log, and the controls follow the full text scale.
 
 ### App shell
 
@@ -77,6 +91,10 @@ Use Flutter `Text`, `Icon`, `SafeArea`, `Column`, `LayoutBuilder`, `Semantics`, 
 - Strings come from `lib/l10n/app_en.arb` through `context.app.localizations`. Do not hard-code user-facing text in widgets.
 
 [ADR 0003](adr/0003-ui-kit-and-app-shell.md) lists the remaining kit work: goldens and a catalog example.
+
+## Hand replayer
+
+`ReplayView` composes the table, a live-region announcement of each step, `ReplayControls`, and `ActionLog`, driven by `ReplayCubit`. Expanded and wider content regions put the log beside the table. Medium regions put it in a bottom panel. Compact regions open it in a `showRiverOverlay` sheet. Keyboard: ← and → step, Home and End jump to the ends, 1–5 jump to a street, and Space plays or pauses unless a focused control handles activation. Debug builds open a sample replay from the Hands page.
 
 ## Current migration
 
