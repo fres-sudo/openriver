@@ -46,7 +46,7 @@ void main() {
     final first = await core.initializeLibrary(database);
     final reopened = await core.initializeLibrary(database);
     expect(first.coreVersion, '0.1.0');
-    expect(reopened.schemaVersion, 2);
+    expect(reopened.schemaVersion, 3);
     expect(await File(database).exists(), isTrue);
     await expectLater(
       core.initializeLibrary(
@@ -69,6 +69,11 @@ void main() {
     );
     await core.initializeLibrary(database);
     expect(await core.storedHandCount(database), 1);
+    final searched = await core.searchHands(
+      database,
+      const HandSearchQuery(search: 'Ada'),
+    );
+    expect(searched.total, 1);
     final page = await core.listHands(database);
     expect(page.hands, hasLength(1));
     expect(page.hands.single.externalHandId, '2001');

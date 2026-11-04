@@ -9,6 +9,7 @@ export 'package:flutter/material.dart' show ThemeMode;
 export 'package:shadcn_ui/shadcn_ui.dart';
 
 export 'src/components/river_button.dart';
+export 'src/components/river_data_table.dart';
 export 'src/components/river_icon_button.dart';
 export 'src/components/river_step_slider.dart';
 export 'src/context.dart';

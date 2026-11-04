@@ -6,7 +6,15 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `fmt`, `fmt`, `from`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `fmt`, `fmt`, `from`, `from`
+
+Future<HandSearchResult> searchHands({
+  required String databasePath,
+  required HandQueryRequest request,
+}) => RustLib.instance.api.crateApiLibrarySearchHands(
+  databasePath: databasePath,
+  request: request,
+);
 
 Future<HandPage> listHands({
   required String databasePath,
@@ -90,6 +98,7 @@ class HandListItem {
   final PlatformInt64 smallBlind;
   final PlatformInt64 bigBlind;
   final int playerCount;
+  final PlatformInt64 totalPot;
 
   const HandListItem({
     required this.id,
@@ -102,6 +111,7 @@ class HandListItem {
     required this.smallBlind,
     required this.bigBlind,
     required this.playerCount,
+    required this.totalPot,
   });
 
   @override
@@ -115,7 +125,8 @@ class HandListItem {
       currencyScale.hashCode ^
       smallBlind.hashCode ^
       bigBlind.hashCode ^
-      playerCount.hashCode;
+      playerCount.hashCode ^
+      totalPot.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -131,7 +142,8 @@ class HandListItem {
           currencyScale == other.currencyScale &&
           smallBlind == other.smallBlind &&
           bigBlind == other.bigBlind &&
-          playerCount == other.playerCount;
+          playerCount == other.playerCount &&
+          totalPot == other.totalPot;
 }
 
 class HandPage {
@@ -153,6 +165,95 @@ class HandPage {
           nextPlayedAt == other.nextPlayedAt &&
           nextId == other.nextId;
 }
+
+class HandQueryRequest {
+  final String search;
+  final String room;
+  final String currency;
+  final String? dateFrom;
+  final String? dateTo;
+  final int? minPlayers;
+  final int? maxPlayers;
+  final HandSortColumn sort;
+  final bool descending;
+  final int page;
+  final int pageSize;
+
+  const HandQueryRequest({
+    required this.search,
+    required this.room,
+    required this.currency,
+    this.dateFrom,
+    this.dateTo,
+    this.minPlayers,
+    this.maxPlayers,
+    required this.sort,
+    required this.descending,
+    required this.page,
+    required this.pageSize,
+  });
+
+  @override
+  int get hashCode =>
+      search.hashCode ^
+      room.hashCode ^
+      currency.hashCode ^
+      dateFrom.hashCode ^
+      dateTo.hashCode ^
+      minPlayers.hashCode ^
+      maxPlayers.hashCode ^
+      sort.hashCode ^
+      descending.hashCode ^
+      page.hashCode ^
+      pageSize.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is HandQueryRequest &&
+          runtimeType == other.runtimeType &&
+          search == other.search &&
+          room == other.room &&
+          currency == other.currency &&
+          dateFrom == other.dateFrom &&
+          dateTo == other.dateTo &&
+          minPlayers == other.minPlayers &&
+          maxPlayers == other.maxPlayers &&
+          sort == other.sort &&
+          descending == other.descending &&
+          page == other.page &&
+          pageSize == other.pageSize;
+}
+
+class HandSearchResult {
+  final List<HandListItem> hands;
+  final PlatformInt64 total;
+  final int page;
+  final int pageSize;
+
+  const HandSearchResult({
+    required this.hands,
+    required this.total,
+    required this.page,
+    required this.pageSize,
+  });
+
+  @override
+  int get hashCode =>
+      hands.hashCode ^ total.hashCode ^ page.hashCode ^ pageSize.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is HandSearchResult &&
+          runtimeType == other.runtimeType &&
+          hands == other.hands &&
+          total == other.total &&
+          page == other.page &&
+          pageSize == other.pageSize;
+}
+
+enum HandSortColumn { playedAt, handId, table, room, blinds, players, pot }
 
 class ImportDiagnostic {
   final String? sourceHandId;

@@ -1,6 +1,6 @@
 //! Coarse-grained, typed application commands. Never expose SQL to Dart.
 use crate::frb_generated::StreamSink;
-use openriver_storage::{Library, StorageError};
+use openriver_storage::{HandQuery, HandSort, Library, StorageError};
 use sha2::{Digest, Sha256};
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -80,6 +80,93 @@ pub struct HandListItem {
     pub small_blind: i64,
     pub big_blind: i64,
     pub player_count: u8,
+    pub total_pot: i64,
+}
+
+pub enum HandSortColumn {
+    PlayedAt,
+    HandId,
+    Table,
+    Room,
+    Blinds,
+    Players,
+    Pot,
+}
+
+pub struct HandQueryRequest {
+    pub search: String,
+    pub room: String,
+    pub currency: String,
+    pub date_from: Option<String>,
+    pub date_to: Option<String>,
+    pub min_players: Option<u8>,
+    pub max_players: Option<u8>,
+    pub sort: HandSortColumn,
+    pub descending: bool,
+    pub page: u32,
+    pub page_size: u32,
+}
+
+pub struct HandSearchResult {
+    pub hands: Vec<HandListItem>,
+    pub total: i64,
+    pub page: u32,
+    pub page_size: u32,
+}
+
+pub async fn search_hands(
+    database_path: String,
+    request: HandQueryRequest,
+) -> Result<HandSearchResult, CoreError> {
+    let library = Library::open(std::path::Path::new(&database_path)).await?;
+    let page = library
+        .search_hands(&HandQuery {
+            search: request.search,
+            room: request.room,
+            currency: request.currency,
+            date_from: request.date_from,
+            date_to: request.date_to,
+            min_players: request.min_players,
+            max_players: request.max_players,
+            sort: match request.sort {
+                HandSortColumn::PlayedAt => HandSort::PlayedAt,
+                HandSortColumn::HandId => HandSort::HandId,
+                HandSortColumn::Table => HandSort::Table,
+                HandSortColumn::Room => HandSort::Room,
+                HandSortColumn::Blinds => HandSort::Blinds,
+                HandSortColumn::Players => HandSort::Players,
+                HandSortColumn::Pot => HandSort::Pot,
+            },
+            descending: request.descending,
+            page: request.page,
+            page_size: request.page_size,
+        })
+        .await?;
+    library.close().await;
+    Ok(HandSearchResult {
+        hands: page.hands.into_iter().map(HandListItem::from).collect(),
+        total: page.total,
+        page: page.page,
+        page_size: page.page_size,
+    })
+}
+
+impl From<openriver_storage::StoredHandSummary> for HandListItem {
+    fn from(row: openriver_storage::StoredHandSummary) -> Self {
+        Self {
+            id: row.id,
+            played_at: row.played_at,
+            room: row.room,
+            external_hand_id: row.external_hand_id,
+            table_name: row.table_name,
+            currency: row.currency,
+            currency_scale: row.currency_scale,
+            small_blind: row.small_blind,
+            big_blind: row.big_blind,
+            player_count: row.player_count,
+            total_pot: row.total_pot,
+        }
+    }
 }
 
 pub struct HandPage {
@@ -103,21 +190,7 @@ pub async fn list_hands(
     let next_played_at = next.map(|row| row.played_at.clone());
     let next_id = next.map(|row| row.id);
     Ok(HandPage {
-        hands: rows
-            .into_iter()
-            .map(|row| HandListItem {
-                id: row.id,
-                played_at: row.played_at,
-                room: row.room,
-                external_hand_id: row.external_hand_id,
-                table_name: row.table_name,
-                currency: row.currency,
-                currency_scale: row.currency_scale,
-                small_blind: row.small_blind,
-                big_blind: row.big_blind,
-                player_count: row.player_count,
-            })
-            .collect(),
+        hands: rows.into_iter().map(HandListItem::from).collect(),
         next_played_at,
         next_id,
     })

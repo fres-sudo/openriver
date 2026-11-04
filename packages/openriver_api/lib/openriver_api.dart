@@ -41,7 +41,54 @@ abstract interface class OpenRiverCore {
   void cancelImport();
   Future<int> storedHandCount(String databasePath);
   Future<StoredHandPage> listHands(String databasePath, {HandCursor? cursor});
+  Future<HandSearchResult> searchHands(
+    String databasePath,
+    HandSearchQuery query,
+  );
   Future<String> handReplayJson(String databasePath, int handId);
+}
+
+enum HandSortColumn { playedAt, handId, table, room, blinds, players, pot }
+
+final class HandSearchQuery {
+  const HandSearchQuery({
+    this.search = '',
+    this.room = '',
+    this.currency = '',
+    this.dateFrom,
+    this.dateTo,
+    this.minPlayers,
+    this.maxPlayers,
+    this.sort = HandSortColumn.playedAt,
+    this.descending = true,
+    this.page = 0,
+    this.pageSize = 20,
+  });
+
+  final String search;
+  final String room;
+  final String currency;
+  final String? dateFrom;
+  final String? dateTo;
+  final int? minPlayers;
+  final int? maxPlayers;
+  final HandSortColumn sort;
+  final bool descending;
+  final int page;
+  final int pageSize;
+}
+
+final class HandSearchResult {
+  const HandSearchResult({
+    required this.hands,
+    required this.total,
+    required this.page,
+    required this.pageSize,
+  });
+  final List<StoredHand> hands;
+  final int total;
+  final int page;
+  final int pageSize;
 }
 
 final class HandCursor {
@@ -62,6 +109,7 @@ final class StoredHand {
     required this.smallBlind,
     required this.bigBlind,
     required this.playerCount,
+    this.totalPot = 0,
   });
   final int id;
   final String playedAt;
@@ -73,6 +121,7 @@ final class StoredHand {
   final int smallBlind;
   final int bigBlind;
   final int playerCount;
+  final int totalPot;
 }
 
 final class StoredHandPage {
@@ -135,7 +184,7 @@ final class RustOpenRiverCore implements OpenRiverCore {
     try {
       await _ensureInitialized();
       final status = await native.initializeLibrary(databasePath: databasePath);
-      if (status.schemaVersion != 2) {
+      if (status.schemaVersion != 3) {
         throw const CoreException(CoreFailure.incompatibleSchema);
       }
       return LibraryInfo(
@@ -240,11 +289,65 @@ final class RustOpenRiverCore implements OpenRiverCore {
             smallBlind: hand.smallBlind,
             bigBlind: hand.bigBlind,
             playerCount: hand.playerCount,
+            totalPot: hand.totalPot,
           ),
       ],
       page.nextPlayedAt == null || page.nextId == null
           ? null
           : HandCursor(page.nextPlayedAt!, page.nextId!),
+    );
+  }
+
+  @override
+  Future<HandSearchResult> searchHands(
+    String databasePath,
+    HandSearchQuery query,
+  ) async {
+    await _ensureInitialized();
+    final result = await native.searchHands(
+      databasePath: databasePath,
+      request: native.HandQueryRequest(
+        search: query.search,
+        room: query.room,
+        currency: query.currency,
+        dateFrom: query.dateFrom,
+        dateTo: query.dateTo,
+        minPlayers: query.minPlayers,
+        maxPlayers: query.maxPlayers,
+        sort: switch (query.sort) {
+          HandSortColumn.playedAt => native.HandSortColumn.playedAt,
+          HandSortColumn.handId => native.HandSortColumn.handId,
+          HandSortColumn.table => native.HandSortColumn.table,
+          HandSortColumn.room => native.HandSortColumn.room,
+          HandSortColumn.blinds => native.HandSortColumn.blinds,
+          HandSortColumn.players => native.HandSortColumn.players,
+          HandSortColumn.pot => native.HandSortColumn.pot,
+        },
+        descending: query.descending,
+        page: query.page,
+        pageSize: query.pageSize,
+      ),
+    );
+    return HandSearchResult(
+      hands: [
+        for (final hand in result.hands)
+          StoredHand(
+            id: hand.id,
+            playedAt: hand.playedAt,
+            room: hand.room,
+            externalHandId: hand.externalHandId,
+            tableName: hand.tableName,
+            currency: hand.currency,
+            currencyScale: hand.currencyScale,
+            smallBlind: hand.smallBlind,
+            bigBlind: hand.bigBlind,
+            playerCount: hand.playerCount,
+            totalPot: hand.totalPot,
+          ),
+      ],
+      total: result.total,
+      page: result.page,
+      pageSize: result.pageSize,
     );
   }
 

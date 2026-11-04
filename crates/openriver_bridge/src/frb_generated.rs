@@ -38,7 +38,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.12.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1085830516;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -687168475;
 
 // Section: executor
 
@@ -276,6 +276,46 @@ fn wire__crate__api__library__list_hands_impl(
         },
     )
 }
+fn wire__crate__api__library__search_hands_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "search_hands",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_database_path = <String>::sse_decode(&mut deserializer);
+            let api_request =
+                <crate::api::library::HandQueryRequest>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, crate::api::library::CoreError>(
+                    (move || async move {
+                        let output_ok =
+                            crate::api::library::search_hands(api_database_path, api_request)
+                                .await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
 fn wire__crate__api__library__stored_hand_count_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -342,6 +382,13 @@ impl SseDecode for String {
     }
 }
 
+impl SseDecode for bool {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        deserializer.cursor.read_u8().unwrap() != 0
+    }
+}
+
 impl SseDecode for crate::api::library::CoreError {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -384,6 +431,7 @@ impl SseDecode for crate::api::library::HandListItem {
         let mut var_smallBlind = <i64>::sse_decode(deserializer);
         let mut var_bigBlind = <i64>::sse_decode(deserializer);
         let mut var_playerCount = <u8>::sse_decode(deserializer);
+        let mut var_totalPot = <i64>::sse_decode(deserializer);
         return crate::api::library::HandListItem {
             id: var_id,
             played_at: var_playedAt,
@@ -395,6 +443,7 @@ impl SseDecode for crate::api::library::HandListItem {
             small_blind: var_smallBlind,
             big_blind: var_bigBlind,
             player_count: var_playerCount,
+            total_pot: var_totalPot,
         };
     }
 }
@@ -409,6 +458,69 @@ impl SseDecode for crate::api::library::HandPage {
             hands: var_hands,
             next_played_at: var_nextPlayedAt,
             next_id: var_nextId,
+        };
+    }
+}
+
+impl SseDecode for crate::api::library::HandQueryRequest {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_search = <String>::sse_decode(deserializer);
+        let mut var_room = <String>::sse_decode(deserializer);
+        let mut var_currency = <String>::sse_decode(deserializer);
+        let mut var_dateFrom = <Option<String>>::sse_decode(deserializer);
+        let mut var_dateTo = <Option<String>>::sse_decode(deserializer);
+        let mut var_minPlayers = <Option<u8>>::sse_decode(deserializer);
+        let mut var_maxPlayers = <Option<u8>>::sse_decode(deserializer);
+        let mut var_sort = <crate::api::library::HandSortColumn>::sse_decode(deserializer);
+        let mut var_descending = <bool>::sse_decode(deserializer);
+        let mut var_page = <u32>::sse_decode(deserializer);
+        let mut var_pageSize = <u32>::sse_decode(deserializer);
+        return crate::api::library::HandQueryRequest {
+            search: var_search,
+            room: var_room,
+            currency: var_currency,
+            date_from: var_dateFrom,
+            date_to: var_dateTo,
+            min_players: var_minPlayers,
+            max_players: var_maxPlayers,
+            sort: var_sort,
+            descending: var_descending,
+            page: var_page,
+            page_size: var_pageSize,
+        };
+    }
+}
+
+impl SseDecode for crate::api::library::HandSearchResult {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_hands = <Vec<crate::api::library::HandListItem>>::sse_decode(deserializer);
+        let mut var_total = <i64>::sse_decode(deserializer);
+        let mut var_page = <u32>::sse_decode(deserializer);
+        let mut var_pageSize = <u32>::sse_decode(deserializer);
+        return crate::api::library::HandSearchResult {
+            hands: var_hands,
+            total: var_total,
+            page: var_page,
+            page_size: var_pageSize,
+        };
+    }
+}
+
+impl SseDecode for crate::api::library::HandSortColumn {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut inner = <i32>::sse_decode(deserializer);
+        return match inner {
+            0 => crate::api::library::HandSortColumn::PlayedAt,
+            1 => crate::api::library::HandSortColumn::HandId,
+            2 => crate::api::library::HandSortColumn::Table,
+            3 => crate::api::library::HandSortColumn::Room,
+            4 => crate::api::library::HandSortColumn::Blinds,
+            5 => crate::api::library::HandSortColumn::Players,
+            6 => crate::api::library::HandSortColumn::Pot,
+            _ => unreachable!("Invalid variant for HandSortColumn: {}", inner),
         };
     }
 }
@@ -556,6 +668,17 @@ impl SseDecode for Option<crate::api::library::ImportSummary> {
     }
 }
 
+impl SseDecode for Option<u8> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<u8>::sse_decode(deserializer));
+        } else {
+            return None;
+        }
+    }
+}
+
 impl SseDecode for u32 {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -575,13 +698,6 @@ impl SseDecode for () {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {}
 }
 
-impl SseDecode for bool {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
-        deserializer.cursor.read_u8().unwrap() != 0
-    }
-}
-
 fn pde_ffi_dispatcher_primary_impl(
     func_id: i32,
     port: flutter_rust_bridge::for_generated::MessagePort,
@@ -596,7 +712,8 @@ fn pde_ffi_dispatcher_primary_impl(
         4 => wire__crate__api__library__init_app_impl(port, ptr, rust_vec_len, data_len),
         5 => wire__crate__api__library__initialize_library_impl(port, ptr, rust_vec_len, data_len),
         6 => wire__crate__api__library__list_hands_impl(port, ptr, rust_vec_len, data_len),
-        7 => wire__crate__api__library__stored_hand_count_impl(port, ptr, rust_vec_len, data_len),
+        7 => wire__crate__api__library__search_hands_impl(port, ptr, rust_vec_len, data_len),
+        8 => wire__crate__api__library__stored_hand_count_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -677,6 +794,7 @@ impl flutter_rust_bridge::IntoDart for crate::api::library::HandListItem {
             self.small_blind.into_into_dart().into_dart(),
             self.big_blind.into_into_dart().into_dart(),
             self.player_count.into_into_dart().into_dart(),
+            self.total_pot.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -708,6 +826,85 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::library::HandPage>
     for crate::api::library::HandPage
 {
     fn into_into_dart(self) -> crate::api::library::HandPage {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::library::HandQueryRequest {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.search.into_into_dart().into_dart(),
+            self.room.into_into_dart().into_dart(),
+            self.currency.into_into_dart().into_dart(),
+            self.date_from.into_into_dart().into_dart(),
+            self.date_to.into_into_dart().into_dart(),
+            self.min_players.into_into_dart().into_dart(),
+            self.max_players.into_into_dart().into_dart(),
+            self.sort.into_into_dart().into_dart(),
+            self.descending.into_into_dart().into_dart(),
+            self.page.into_into_dart().into_dart(),
+            self.page_size.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::library::HandQueryRequest
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::library::HandQueryRequest>
+    for crate::api::library::HandQueryRequest
+{
+    fn into_into_dart(self) -> crate::api::library::HandQueryRequest {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::library::HandSearchResult {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.hands.into_into_dart().into_dart(),
+            self.total.into_into_dart().into_dart(),
+            self.page.into_into_dart().into_dart(),
+            self.page_size.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::library::HandSearchResult
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::library::HandSearchResult>
+    for crate::api::library::HandSearchResult
+{
+    fn into_into_dart(self) -> crate::api::library::HandSearchResult {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::api::library::HandSortColumn {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        match self {
+            Self::PlayedAt => 0.into_dart(),
+            Self::HandId => 1.into_dart(),
+            Self::Table => 2.into_dart(),
+            Self::Room => 3.into_dart(),
+            Self::Blinds => 4.into_dart(),
+            Self::Players => 5.into_dart(),
+            Self::Pot => 6.into_dart(),
+            _ => unreachable!(),
+        }
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::api::library::HandSortColumn
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::library::HandSortColumn>
+    for crate::api::library::HandSortColumn
+{
+    fn into_into_dart(self) -> crate::api::library::HandSortColumn {
         self
     }
 }
@@ -806,6 +1003,13 @@ impl SseEncode for String {
     }
 }
 
+impl SseEncode for bool {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        serializer.cursor.write_u8(self as _).unwrap();
+    }
+}
+
 impl SseEncode for crate::api::library::CoreError {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -848,6 +1052,7 @@ impl SseEncode for crate::api::library::HandListItem {
         <i64>::sse_encode(self.small_blind, serializer);
         <i64>::sse_encode(self.big_blind, serializer);
         <u8>::sse_encode(self.player_count, serializer);
+        <i64>::sse_encode(self.total_pot, serializer);
     }
 }
 
@@ -857,6 +1062,54 @@ impl SseEncode for crate::api::library::HandPage {
         <Vec<crate::api::library::HandListItem>>::sse_encode(self.hands, serializer);
         <Option<String>>::sse_encode(self.next_played_at, serializer);
         <Option<i64>>::sse_encode(self.next_id, serializer);
+    }
+}
+
+impl SseEncode for crate::api::library::HandQueryRequest {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.search, serializer);
+        <String>::sse_encode(self.room, serializer);
+        <String>::sse_encode(self.currency, serializer);
+        <Option<String>>::sse_encode(self.date_from, serializer);
+        <Option<String>>::sse_encode(self.date_to, serializer);
+        <Option<u8>>::sse_encode(self.min_players, serializer);
+        <Option<u8>>::sse_encode(self.max_players, serializer);
+        <crate::api::library::HandSortColumn>::sse_encode(self.sort, serializer);
+        <bool>::sse_encode(self.descending, serializer);
+        <u32>::sse_encode(self.page, serializer);
+        <u32>::sse_encode(self.page_size, serializer);
+    }
+}
+
+impl SseEncode for crate::api::library::HandSearchResult {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <Vec<crate::api::library::HandListItem>>::sse_encode(self.hands, serializer);
+        <i64>::sse_encode(self.total, serializer);
+        <u32>::sse_encode(self.page, serializer);
+        <u32>::sse_encode(self.page_size, serializer);
+    }
+}
+
+impl SseEncode for crate::api::library::HandSortColumn {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(
+            match self {
+                crate::api::library::HandSortColumn::PlayedAt => 0,
+                crate::api::library::HandSortColumn::HandId => 1,
+                crate::api::library::HandSortColumn::Table => 2,
+                crate::api::library::HandSortColumn::Room => 3,
+                crate::api::library::HandSortColumn::Blinds => 4,
+                crate::api::library::HandSortColumn::Players => 5,
+                crate::api::library::HandSortColumn::Pot => 6,
+                _ => {
+                    unimplemented!("");
+                }
+            },
+            serializer,
+        );
     }
 }
 
@@ -966,6 +1219,16 @@ impl SseEncode for Option<crate::api::library::ImportSummary> {
     }
 }
 
+impl SseEncode for Option<u8> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <u8>::sse_encode(value, serializer);
+        }
+    }
+}
+
 impl SseEncode for u32 {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -983,13 +1246,6 @@ impl SseEncode for u8 {
 impl SseEncode for () {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {}
-}
-
-impl SseEncode for bool {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        serializer.cursor.write_u8(self as _).unwrap();
-    }
 }
 
 #[cfg(not(target_family = "wasm"))]

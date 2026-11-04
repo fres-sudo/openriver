@@ -4,12 +4,12 @@ use openriver_domain::{validate_hand, Hand};
 use openriver_parser::{ParseDiagnostic, ParseResult};
 use sqlx::{
     sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions},
-    SqlitePool,
+    QueryBuilder, Sqlite, SqlitePool,
 };
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-pub const SCHEMA_VERSION: u32 = 2;
+pub const SCHEMA_VERSION: u32 = 3;
 /// Hands between progress reports and cancellation checks.
 const PROGRESS_STEP: usize = 250;
 static MIGRATOR: sqlx::migrate::Migrator = sqlx::migrate!("./migrations");
@@ -114,11 +114,15 @@ impl Library {
                 .iter()
                 .try_fold(0i64, |sum, pot| sum.checked_add(pot.amount.0))
                 .ok_or(StorageError::InvalidHand)?;
-            let inserted = sqlx::query("INSERT INTO imported_hands (batch_id, room, game_variant, external_hand_id, source_sha256, source_start_line, source_end_line, parser_version, played_at, table_name, canonical_json, total_pot_units) VALUES (?, ?, 'nlhe_cash', ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(room, game_variant, external_hand_id) DO NOTHING")
+            let inserted = sqlx::query("INSERT INTO imported_hands (batch_id, room, game_variant, external_hand_id, source_sha256, source_start_line, source_end_line, parser_version, played_at, table_name, canonical_json, total_pot_units, currency, currency_scale, small_blind_units, big_blind_units, player_count, players_text) VALUES (?, ?, 'nlhe_cash', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(room, game_variant, external_hand_id) DO NOTHING")
                 .bind(batch_id).bind(&hand.provenance.room).bind(&hand.provenance.external_hand_id)
                 .bind(&hand.provenance.source_sha256).bind(hand.provenance.start_line as i64)
                 .bind(hand.provenance.end_line as i64).bind(&hand.provenance.parser_version)
                 .bind(&hand.played_at).bind(&hand.table_name).bind(json).bind(pot)
+                .bind(&hand.game.currency).bind(hand.game.currency_scale as i64)
+                .bind(hand.game.small_blind.0).bind(hand.game.big_blind.0)
+                .bind(hand.players.len() as i64)
+                .bind(hand.players.iter().map(|p| p.name.as_str()).collect::<Vec<_>>().join(" "))
                 .execute(&mut *tx).await?.rows_affected();
             if inserted == 1 {
                 imported += 1;
@@ -198,6 +202,7 @@ impl Library {
                     small_blind: hand.game.small_blind.0,
                     big_blind: hand.game.big_blind.0,
                     player_count: hand.players.len() as u8,
+                    total_pot: hand.pots.iter().map(|pot| pot.amount.0).sum(),
                 })
             })
             .collect()
@@ -212,9 +217,45 @@ impl Library {
         json.map(|json| serde_json::from_str(&json).map_err(|_| StorageError::InvalidStoredHand))
             .transpose()
     }
+
+    /// Filters and sorts the full library before applying a bounded page.
+    pub async fn search_hands(&self, query: &HandQuery) -> Result<HandSearchPage, StorageError> {
+        let page_size = query.page_size.clamp(1, 50);
+        let mut tx = self.pool.begin().await?;
+        let mut count =
+            QueryBuilder::<Sqlite>::new("SELECT COUNT(*) FROM imported_hands h WHERE 1=1");
+        append_hand_filters(&mut count, query);
+        let total: i64 = count.build_query_scalar().fetch_one(&mut *tx).await?;
+
+        let mut rows = QueryBuilder::<Sqlite>::new(
+            "SELECT h.id, h.played_at, h.room, h.external_hand_id, h.table_name, \
+             h.currency, h.currency_scale, h.small_blind_units AS small_blind, \
+             h.big_blind_units AS big_blind, h.player_count, h.total_pot_units AS total_pot \
+             FROM imported_hands h WHERE 1=1",
+        );
+        append_hand_filters(&mut rows, query);
+        rows.push(" ORDER BY ");
+        rows.push(query.sort.sql());
+        rows.push(if query.descending { " DESC" } else { " ASC" });
+        rows.push(", h.id DESC LIMIT ");
+        rows.push_bind(i64::from(page_size));
+        rows.push(" OFFSET ");
+        rows.push_bind(i64::from(query.page) * i64::from(page_size));
+        let hands = rows
+            .build_query_as::<StoredHandSummary>()
+            .fetch_all(&mut *tx)
+            .await?;
+        tx.commit().await?;
+        Ok(HandSearchPage {
+            hands,
+            total,
+            page: query.page,
+            page_size,
+        })
+    }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, sqlx::FromRow)]
 pub struct StoredHandSummary {
     pub id: i64,
     pub played_at: String,
@@ -226,6 +267,121 @@ pub struct StoredHandSummary {
     pub small_blind: i64,
     pub big_blind: i64,
     pub player_count: u8,
+    pub total_pot: i64,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum HandSort {
+    #[default]
+    PlayedAt,
+    HandId,
+    Table,
+    Room,
+    Blinds,
+    Players,
+    Pot,
+}
+
+impl HandSort {
+    fn sql(self) -> &'static str {
+        match self {
+            Self::PlayedAt => "h.played_at",
+            Self::HandId => "h.external_hand_id COLLATE NOCASE",
+            Self::Table => "h.table_name COLLATE NOCASE",
+            Self::Room => "h.room COLLATE NOCASE",
+            Self::Blinds => "h.big_blind_units * 1.0 / CASE h.currency_scale WHEN 0 THEN 1 WHEN 1 THEN 10 WHEN 2 THEN 100 WHEN 3 THEN 1000 WHEN 4 THEN 10000 WHEN 5 THEN 100000 ELSE 1000000 END",
+            Self::Players => "h.player_count",
+            Self::Pot => "h.total_pot_units * 1.0 / CASE h.currency_scale WHEN 0 THEN 1 WHEN 1 THEN 10 WHEN 2 THEN 100 WHEN 3 THEN 1000 WHEN 4 THEN 10000 WHEN 5 THEN 100000 ELSE 1000000 END",
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct HandQuery {
+    pub search: String,
+    pub room: String,
+    pub currency: String,
+    pub date_from: Option<String>,
+    pub date_to: Option<String>,
+    pub min_players: Option<u8>,
+    pub max_players: Option<u8>,
+    pub sort: HandSort,
+    pub descending: bool,
+    pub page: u32,
+    pub page_size: u32,
+}
+
+impl Default for HandQuery {
+    fn default() -> Self {
+        Self {
+            search: String::new(),
+            room: String::new(),
+            currency: String::new(),
+            date_from: None,
+            date_to: None,
+            min_players: None,
+            max_players: None,
+            sort: HandSort::PlayedAt,
+            descending: true,
+            page: 0,
+            page_size: 20,
+        }
+    }
+}
+
+pub struct HandSearchPage {
+    pub hands: Vec<StoredHandSummary>,
+    pub total: i64,
+    pub page: u32,
+    pub page_size: u32,
+}
+
+fn append_hand_filters(builder: &mut QueryBuilder<'_, Sqlite>, query: &HandQuery) {
+    let search = fts_query(&query.search);
+    if !search.is_empty() {
+        builder.push(
+            " AND h.id IN (SELECT rowid FROM imported_hands_fts WHERE imported_hands_fts MATCH ",
+        );
+        builder.push_bind(search);
+        builder.push(")");
+    }
+    if !query.room.trim().is_empty() {
+        builder.push(" AND instr(lower(h.room), lower(");
+        builder.push_bind(query.room.trim().to_owned());
+        builder.push(")) > 0");
+    }
+    if !query.currency.trim().is_empty() {
+        builder.push(" AND h.currency = ");
+        builder.push_bind(query.currency.trim().to_uppercase());
+    }
+    if let Some(date) = &query.date_from {
+        builder.push(" AND h.played_at >= ");
+        builder.push_bind(format!("{date}T00:00:00Z"));
+    }
+    if let Some(date) = &query.date_to {
+        builder.push(" AND h.played_at <= ");
+        builder.push_bind(format!("{date}T23:59:59Z"));
+    }
+    if let Some(min) = query.min_players {
+        builder.push(" AND h.player_count >= ");
+        builder.push_bind(i64::from(min));
+    }
+    if let Some(max) = query.max_players {
+        builder.push(" AND h.player_count <= ");
+        builder.push_bind(i64::from(max));
+    }
+}
+
+fn fts_query(input: &str) -> String {
+    input
+        .chars()
+        .take(120)
+        .collect::<String>()
+        .split(|c: char| !c.is_alphanumeric())
+        .filter(|token| !token.is_empty())
+        .map(|token| format!("\"{token}\"*"))
+        .collect::<Vec<_>>()
+        .join(" AND ")
 }
 
 #[derive(Clone, Debug)]
@@ -385,6 +541,168 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn search_filters_and_sorts_before_paging() {
+        let dir = tempfile::tempdir().unwrap();
+        let library = Library::open(&dir.path().join("library.sqlite3"))
+            .await
+            .unwrap();
+        let template = include_str!("../../../fixtures/hands/normal_fold.txt");
+        let source = (0..5)
+            .map(|i| {
+                template
+                    .replace("Hand #1002", &format!("Hand #{}", 7000 + i))
+                    .replace("Table 'Example'", &format!("Table 'Table{i}'"))
+                    .replace(
+                        "2026/10/23 12:01:00",
+                        &format!("2026/10/2{} 12:01:00", 3 + i),
+                    )
+                    .replace("Ada", if i == 4 { "Nia" } else { "Ada" })
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+        let parsed = openriver_parser::parse(source.as_bytes()).unwrap();
+        assert_eq!(library.import(&parsed, "browse").await.unwrap().imported, 5);
+
+        let query = HandQuery {
+            page_size: 10,
+            search: "Nia".into(),
+            ..HandQuery::default()
+        };
+        let result = library.search_hands(&query).await.unwrap();
+        assert_eq!(result.total, 1);
+        assert_eq!(result.hands[0].external_hand_id, "7004");
+        assert_eq!(result.hands[0].total_pot, 4);
+
+        let query = HandQuery {
+            search: "700".into(),
+            date_from: Some("2026-10-24".into()),
+            date_to: Some("2026-10-26".into()),
+            room: "stars".into(),
+            currency: "usd".into(),
+            min_players: Some(2),
+            max_players: Some(2),
+            sort: HandSort::HandId,
+            descending: false,
+            page_size: 10,
+            ..HandQuery::default()
+        };
+        let result = library.search_hands(&query).await.unwrap();
+        assert_eq!(result.total, 3);
+        assert_eq!(
+            result
+                .hands
+                .iter()
+                .map(|h| h.external_hand_id.as_str())
+                .collect::<Vec<_>>(),
+            ["7001", "7002", "7003"]
+        );
+
+        let query = HandQuery {
+            page: 1,
+            page_size: 2,
+            sort: HandSort::Table,
+            descending: false,
+            ..HandQuery::default()
+        };
+        let page = library.search_hands(&query).await.unwrap();
+        assert_eq!(page.total, 5);
+        assert_eq!(page.hands.len(), 2);
+        assert_eq!(page.hands[0].table_name, "Table2");
+        assert_eq!(page.hands[1].table_name, "Table3");
+        for sort in [
+            HandSort::PlayedAt,
+            HandSort::HandId,
+            HandSort::Table,
+            HandSort::Room,
+            HandSort::Blinds,
+            HandSort::Players,
+            HandSort::Pot,
+        ] {
+            assert_eq!(
+                library
+                    .search_hands(&HandQuery {
+                        sort,
+                        ..HandQuery::default()
+                    })
+                    .await
+                    .unwrap()
+                    .total,
+                5
+            );
+        }
+        assert_eq!(
+            library
+                .search_hands(&HandQuery {
+                    search: "\" OR *".into(),
+                    ..HandQuery::default()
+                })
+                .await
+                .unwrap()
+                .total,
+            0
+        );
+    }
+
+    #[tokio::test]
+    async fn schema_two_backfills_search_index_and_query_columns() {
+        let dir = tempfile::tempdir().unwrap();
+        let migrations = tempfile::tempdir().unwrap();
+        std::fs::write(
+            migrations.path().join("0001_library.sql"),
+            include_str!("../migrations/0001_library.sql"),
+        )
+        .unwrap();
+        std::fs::write(
+            migrations.path().join("0002_imports.sql"),
+            include_str!("../migrations/0002_imports.sql"),
+        )
+        .unwrap();
+        let path = dir.path().join("library.sqlite3");
+        let pool = SqlitePoolOptions::new()
+            .max_connections(1)
+            .connect_with(
+                SqliteConnectOptions::new()
+                    .filename(&path)
+                    .create_if_missing(true),
+            )
+            .await
+            .unwrap();
+        sqlx::migrate::Migrator::new(migrations.path())
+            .await
+            .unwrap()
+            .run(&pool)
+            .await
+            .unwrap();
+        let hand =
+            openriver_parser::parse(include_bytes!("../../../fixtures/hands/normal_fold.txt"))
+                .unwrap()
+                .hands
+                .remove(0);
+        let batch: i64 = sqlx::query_scalar("INSERT INTO import_batches (source_sha256, parser_version, parsed_count, imported_count, duplicate_count, rejected_count) VALUES ('old', 'old', 1, 1, 0, 0) RETURNING id")
+            .fetch_one(&pool).await.unwrap();
+        sqlx::query("INSERT INTO imported_hands (batch_id, room, game_variant, external_hand_id, source_sha256, source_start_line, source_end_line, parser_version, played_at, table_name, canonical_json, total_pot_units) VALUES (?, ?, 'nlhe_cash', ?, 'old', 1, 20, 'old', ?, ?, ?, 4)")
+            .bind(batch).bind(&hand.provenance.room).bind(&hand.provenance.external_hand_id)
+            .bind(&hand.played_at).bind(&hand.table_name).bind(serde_json::to_string(&hand).unwrap())
+            .execute(&pool).await.unwrap();
+        pool.close().await;
+
+        let library = Library::open(&path).await.unwrap();
+        assert_eq!(library.schema_version().await.unwrap(), 3);
+        let result = library
+            .search_hands(&HandQuery {
+                search: "Ada".into(),
+                ..HandQuery::default()
+            })
+            .await
+            .unwrap();
+        assert_eq!(result.total, 1);
+        assert_eq!(result.hands[0].currency, "USD");
+        assert_eq!(result.hands[0].big_blind, 2);
+        assert_eq!(result.hands[0].player_count, 2);
+        assert_eq!(result.hands[0].total_pot, 4);
+    }
+
+    #[tokio::test]
     async fn write_failure_rolls_back_batch() {
         let dir = tempfile::tempdir().unwrap();
         let library = Library::open(&dir.path().join("library.sqlite3"))
@@ -461,7 +779,7 @@ mod tests {
             .unwrap();
         pool.close().await;
         let library = Library::open(&path).await.unwrap();
-        assert_eq!(library.schema_version().await.unwrap(), 2);
+        assert_eq!(library.schema_version().await.unwrap(), 3);
         let value: String =
             sqlx::query_scalar("SELECT value FROM library_metadata WHERE key = 'sentinel'")
                 .fetch_one(&library.pool)

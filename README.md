@@ -2,7 +2,7 @@
 
 Local-first poker study for **Windows, macOS, Linux, Android, and iOS**, using a shared Flutter application and a Rust core.
 
-This repository includes a first synthetic hand-history import slice. The app opens a local SQLite library, selects a text file, validates supported synthetic NLHE hands in Rust, stores accepted hands, and reports duplicates and rejections. Imported hands appear in a paginated list and can open in the hand replayer. Live room compatibility, poker statistics, coaching, and sync are not yet implemented.
+This repository includes a first synthetic hand-history import slice. The app opens a local SQLite library, selects a text file, validates supported synthetic NLHE hands in Rust, stores accepted hands, and reports duplicates and rejections. Imported hands appear in a searchable, sortable, filterable, paginated table and can open in the hand replayer. Live room compatibility, poker statistics, coaching, and sync are not yet implemented.
 
 ## Quick start
 
@@ -87,7 +87,7 @@ It opens and reopens a temporary SQLite database through Dart → Rust, verifies
 
 ## Local data and scope
 
-The app creates `openriver.sqlite3` in the OS application-support directory. Rust enables foreign keys, a bounded lock wait, WAL, and embedded migrations. Schema 2 stores import batches, validated hands, and rejection diagnostics. Do not copy a live SQLite file for backups; a consistent backup command is still future work.
+The app creates `openriver.sqlite3` in the OS application-support directory. Rust enables foreign keys, a bounded lock wait, WAL, and embedded migrations. Schema 3 stores import batches, validated hands, rejection diagnostics, and indexed metadata for the Hands browser. Existing schema 2 libraries migrate on open. Do not copy a live SQLite file for backups; a consistent backup command is still future work.
 
 The [hosted-service foundation decision](docs/adr/0002-hosted-service-foundation.md) specifies a future private Bun/Elysia/Better Auth/Drizzle/PostgreSQL service deployed with Docker Compose. This public product workspace contains no hosted AI/billing/auth service or cloud deployment. Engine, study, AI-client, and sync packages will be introduced with their first functioning features rather than empty projects. Mobile targets are included now, ahead of the original design's mobile-later schedule.
 

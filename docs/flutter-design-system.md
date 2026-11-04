@@ -38,6 +38,7 @@ OpenRiver uses [shadcn_ui](https://pub.dev/packages/shadcn_ui/versions/0.2.6) as
 | Future inputs and selection | `ShadInput`, `ShadSelect`, `ShadCheckbox`, and other `shadcn_ui` controls |
 | Icons | `LucideIcons` exported by `shadcn_ui` |
 | Choosing a whole number in a range, such as a replay step | `RiverStepSlider` |
+| Searchable, sortable data lists | `RiverDataTable` with query state owned by the screen |
 | Cards, chips, felt, and seats | The replay table widgets below |
 
 Use Flutter `Text`, `Icon`, `SafeArea`, `Column`, `LayoutBuilder`, `Semantics`, and similar primitives to compose these components. Do not add Material or Cupertino controls, themes, snackbars, buttons, cards, chips, input fields, or progress indicators to app screens. When a needed control is absent in this library version, build a small shared widget from Flutter primitives using the Shad theme, and document it here before using it across screens.
@@ -51,6 +52,7 @@ Use Flutter `Text`, `Icon`, `SafeArea`, `Column`, `LayoutBuilder`, `Semantics`, 
 - `RiverIconButton` is an icon-only action with a spoken label and tooltip.
 - `RiverStateView.loading`, `.empty`, and `.error` replace content in the same region. Error messages are live regions and must not contain raw errors, paths, or file contents.
 - `RiverStepSlider` chooses a whole number from 0 to `max`. shadcn_ui 0.2.6's `ShadSlider` wraps Material's `Slider`, which asserts without a Material ancestor, so the kit builds its own from primitives. It is 48 pixels tall, responds to taps and drags, takes arrow keys, Home, and End while focused, mirrors in right-to-left layouts, and exposes slider semantics with a spoken value and increase and decrease actions.
+- `RiverDataTable<T, K>` composes shadcn colors, borders, buttons, and checkboxes into sortable headers, selectable rows, an open action, and a compact card layout below 850 pixels. Its caller owns sorting, filtering, pagination, and visible-column state; sorting a server-backed list therefore queries the whole library rather than just the current page. The Hands page supplies all seven sortable columns, full-text search, combined filters, column visibility, and pagination.
 
 ### Replay table widgets
 
@@ -94,7 +96,7 @@ These are poker-specific, so they live in `apps/openriver/lib/features/replay/` 
 
 ## Hand replayer
 
-`ReplayView` composes the table, a live-region announcement of each step, `ReplayControls`, and `ActionLog`, driven by `ReplayCubit`. Expanded and wider content regions put the log beside the table. Medium regions put it in a bottom panel. Compact regions open it in a `showRiverOverlay` sheet. Keyboard: ← and → step, Home and End jump to the ends, 1–5 jump to a street, and Space plays or pauses unless a focused control handles activation. The Hands page lists stored hands 30 at a time, newest first; selecting one loads snapshots computed by Rust and opens its replay. Debug builds also offer a built-in sample replay.
+`ReplayView` composes the table, a live-region announcement of each step, `ReplayControls`, and `ActionLog`, driven by `ReplayCubit`. Expanded and wider content regions put the log beside the table. Medium regions put it in a bottom panel. Compact regions open it in a `showRiverOverlay` sheet. Keyboard: ← and → step, Home and End jump to the ends, 1–5 jump to a street, and Space plays or pauses unless a focused control handles activation. The Hands browser uses a bounded Rust query with search, filters, sorting, and page sizes from 10 to 50; opening a row loads snapshots computed by Rust. Debug builds also offer a built-in sample replay.
 
 ## Current migration
 

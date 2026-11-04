@@ -322,6 +322,210 @@ abstract class AppLocalizations {
   /// **'Opening replay…'**
   String get handsOpeningReplay;
 
+  /// No description provided for @handsSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search hands, tables, rooms, players…'**
+  String get handsSearchHint;
+
+  /// No description provided for @handsFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Filters'**
+  String get handsFilters;
+
+  /// No description provided for @handsColumns.
+  ///
+  /// In en, this message translates to:
+  /// **'Columns'**
+  String get handsColumns;
+
+  /// No description provided for @handsSort.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort'**
+  String get handsSort;
+
+  /// No description provided for @handsReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get handsReset;
+
+  /// No description provided for @handsApplyFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply filters'**
+  String get handsApplyFilters;
+
+  /// No description provided for @handsClearFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear filters'**
+  String get handsClearFilters;
+
+  /// No description provided for @handsInvalidFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the date range and player counts, then try again.'**
+  String get handsInvalidFilters;
+
+  /// No description provided for @handsRoom.
+  ///
+  /// In en, this message translates to:
+  /// **'Room'**
+  String get handsRoom;
+
+  /// No description provided for @handsCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Currency'**
+  String get handsCurrency;
+
+  /// No description provided for @handsCurrencyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'USD'**
+  String get handsCurrencyHint;
+
+  /// No description provided for @handsFromDate.
+  ///
+  /// In en, this message translates to:
+  /// **'From date (UTC)'**
+  String get handsFromDate;
+
+  /// No description provided for @handsToDate.
+  ///
+  /// In en, this message translates to:
+  /// **'To date (UTC)'**
+  String get handsToDate;
+
+  /// No description provided for @handsMinPlayers.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum players'**
+  String get handsMinPlayers;
+
+  /// No description provided for @handsMaxPlayers.
+  ///
+  /// In en, this message translates to:
+  /// **'Maximum players'**
+  String get handsMaxPlayers;
+
+  /// No description provided for @handsDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get handsDate;
+
+  /// No description provided for @handsHandId.
+  ///
+  /// In en, this message translates to:
+  /// **'Hand ID'**
+  String get handsHandId;
+
+  /// No description provided for @handsTable.
+  ///
+  /// In en, this message translates to:
+  /// **'Table'**
+  String get handsTable;
+
+  /// No description provided for @handsBlinds.
+  ///
+  /// In en, this message translates to:
+  /// **'Blinds'**
+  String get handsBlinds;
+
+  /// No description provided for @handsPlayers.
+  ///
+  /// In en, this message translates to:
+  /// **'Players'**
+  String get handsPlayers;
+
+  /// No description provided for @handsPot.
+  ///
+  /// In en, this message translates to:
+  /// **'Pot'**
+  String get handsPot;
+
+  /// No description provided for @handsSelectPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Select all visible hands'**
+  String get handsSelectPage;
+
+  /// No description provided for @handsSelectHand.
+  ///
+  /// In en, this message translates to:
+  /// **'Select hand {handId}'**
+  String handsSelectHand(String handId);
+
+  /// No description provided for @handsNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching hands'**
+  String get handsNoResults;
+
+  /// No description provided for @handsNoResultsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Try another search or change the filters.'**
+  String get handsNoResultsHint;
+
+  /// No description provided for @handsShowing.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing {first}–{last} of {total}'**
+  String handsShowing(int first, int last, int total);
+
+  /// No description provided for @handsSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 selected} other{{count} selected}} · Clear'**
+  String handsSelected(int count);
+
+  /// No description provided for @handsRowsPerPage.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} rows per page'**
+  String handsRowsPerPage(int count);
+
+  /// No description provided for @handsRowsPerPageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Rows per page'**
+  String get handsRowsPerPageTitle;
+
+  /// No description provided for @handsPageOf.
+  ///
+  /// In en, this message translates to:
+  /// **'Page {page} of {pages}'**
+  String handsPageOf(int page, int pages);
+
+  /// No description provided for @handsFirstPage.
+  ///
+  /// In en, this message translates to:
+  /// **'First page'**
+  String get handsFirstPage;
+
+  /// No description provided for @handsPreviousPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous page'**
+  String get handsPreviousPage;
+
+  /// No description provided for @handsNextPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Next page'**
+  String get handsNextPage;
+
+  /// No description provided for @handsLastPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Last page'**
+  String get handsLastPage;
+
   /// No description provided for @handsRowDetails.
   ///
   /// In en, this message translates to:

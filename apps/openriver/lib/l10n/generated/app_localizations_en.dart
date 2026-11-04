@@ -144,6 +144,125 @@ class AppLocalizationsEn extends AppLocalizations {
   String get handsOpeningReplay => 'Opening replay…';
 
   @override
+  String get handsSearchHint => 'Search hands, tables, rooms, players…';
+
+  @override
+  String get handsFilters => 'Filters';
+
+  @override
+  String get handsColumns => 'Columns';
+
+  @override
+  String get handsSort => 'Sort';
+
+  @override
+  String get handsReset => 'Reset';
+
+  @override
+  String get handsApplyFilters => 'Apply filters';
+
+  @override
+  String get handsClearFilters => 'Clear filters';
+
+  @override
+  String get handsInvalidFilters =>
+      'Check the date range and player counts, then try again.';
+
+  @override
+  String get handsRoom => 'Room';
+
+  @override
+  String get handsCurrency => 'Currency';
+
+  @override
+  String get handsCurrencyHint => 'USD';
+
+  @override
+  String get handsFromDate => 'From date (UTC)';
+
+  @override
+  String get handsToDate => 'To date (UTC)';
+
+  @override
+  String get handsMinPlayers => 'Minimum players';
+
+  @override
+  String get handsMaxPlayers => 'Maximum players';
+
+  @override
+  String get handsDate => 'Date';
+
+  @override
+  String get handsHandId => 'Hand ID';
+
+  @override
+  String get handsTable => 'Table';
+
+  @override
+  String get handsBlinds => 'Blinds';
+
+  @override
+  String get handsPlayers => 'Players';
+
+  @override
+  String get handsPot => 'Pot';
+
+  @override
+  String get handsSelectPage => 'Select all visible hands';
+
+  @override
+  String handsSelectHand(String handId) {
+    return 'Select hand $handId';
+  }
+
+  @override
+  String get handsNoResults => 'No matching hands';
+
+  @override
+  String get handsNoResultsHint => 'Try another search or change the filters.';
+
+  @override
+  String handsShowing(int first, int last, int total) {
+    return 'Showing $first–$last of $total';
+  }
+
+  @override
+  String handsSelected(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count selected',
+      one: '1 selected',
+    );
+    return '$_temp0 · Clear';
+  }
+
+  @override
+  String handsRowsPerPage(int count) {
+    return '$count rows per page';
+  }
+
+  @override
+  String get handsRowsPerPageTitle => 'Rows per page';
+
+  @override
+  String handsPageOf(int page, int pages) {
+    return 'Page $page of $pages';
+  }
+
+  @override
+  String get handsFirstPage => 'First page';
+
+  @override
+  String get handsPreviousPage => 'Previous page';
+
+  @override
+  String get handsNextPage => 'Next page';
+
+  @override
+  String get handsLastPage => 'Last page';
+
+  @override
   String handsRowDetails(String played, String room, String handId) {
     return '$played · $room · Hand #$handId';
   }

@@ -66,7 +66,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.12.0';
 
   @override
-  int get rustContentHash => 1085830516;
+  int get rustContentHash => -687168475;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -100,6 +100,11 @@ abstract class RustLibApi extends BaseApi {
     required String databasePath,
     String? cursorPlayedAt,
     PlatformInt64? cursorId,
+  });
+
+  Future<HandSearchResult> crateApiLibrarySearchHands({
+    required String databasePath,
+    required HandQueryRequest request,
   });
 
   Future<int> crateApiLibraryStoredHandCount({required String databasePath});
@@ -306,6 +311,40 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   );
 
   @override
+  Future<HandSearchResult> crateApiLibrarySearchHands({
+    required String databasePath,
+    required HandQueryRequest request,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(databasePath, serializer);
+          sse_encode_box_autoadd_hand_query_request(request, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 7,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_hand_search_result,
+          decodeErrorData: sse_decode_core_error,
+        ),
+        constMeta: kCrateApiLibrarySearchHandsConstMeta,
+        argValues: [databasePath, request],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiLibrarySearchHandsConstMeta => const TaskConstMeta(
+    debugName: "search_hands",
+    argNames: ["databasePath", "request"],
+  );
+
+  @override
   Future<int> crateApiLibraryStoredHandCount({required String databasePath}) {
     return handler.executeNormal(
       NormalTask(
@@ -315,7 +354,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 7,
+            funcId: 8,
             port: port_,
           );
         },
@@ -357,6 +396,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  bool dco_decode_bool(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as bool;
+  }
+
+  @protected
+  HandQueryRequest dco_decode_box_autoadd_hand_query_request(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_hand_query_request(raw);
+  }
+
+  @protected
   PlatformInt64 dco_decode_box_autoadd_i_64(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_i_64(raw);
@@ -366,6 +417,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ImportSummary dco_decode_box_autoadd_import_summary(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_import_summary(raw);
+  }
+
+  @protected
+  int dco_decode_box_autoadd_u_8(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as int;
   }
 
   @protected
@@ -390,8 +447,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   HandListItem dco_decode_hand_list_item(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 10)
-      throw Exception('unexpected arr length: expect 10 but see ${arr.length}');
+    if (arr.length != 11)
+      throw Exception('unexpected arr length: expect 11 but see ${arr.length}');
     return HandListItem(
       id: dco_decode_i_64(arr[0]),
       playedAt: dco_decode_String(arr[1]),
@@ -403,6 +460,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       smallBlind: dco_decode_i_64(arr[7]),
       bigBlind: dco_decode_i_64(arr[8]),
       playerCount: dco_decode_u_8(arr[9]),
+      totalPot: dco_decode_i_64(arr[10]),
     );
   }
 
@@ -417,6 +475,47 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       nextPlayedAt: dco_decode_opt_String(arr[1]),
       nextId: dco_decode_opt_box_autoadd_i_64(arr[2]),
     );
+  }
+
+  @protected
+  HandQueryRequest dco_decode_hand_query_request(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 11)
+      throw Exception('unexpected arr length: expect 11 but see ${arr.length}');
+    return HandQueryRequest(
+      search: dco_decode_String(arr[0]),
+      room: dco_decode_String(arr[1]),
+      currency: dco_decode_String(arr[2]),
+      dateFrom: dco_decode_opt_String(arr[3]),
+      dateTo: dco_decode_opt_String(arr[4]),
+      minPlayers: dco_decode_opt_box_autoadd_u_8(arr[5]),
+      maxPlayers: dco_decode_opt_box_autoadd_u_8(arr[6]),
+      sort: dco_decode_hand_sort_column(arr[7]),
+      descending: dco_decode_bool(arr[8]),
+      page: dco_decode_u_32(arr[9]),
+      pageSize: dco_decode_u_32(arr[10]),
+    );
+  }
+
+  @protected
+  HandSearchResult dco_decode_hand_search_result(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return HandSearchResult(
+      hands: dco_decode_list_hand_list_item(arr[0]),
+      total: dco_decode_i_64(arr[1]),
+      page: dco_decode_u_32(arr[2]),
+      pageSize: dco_decode_u_32(arr[3]),
+    );
+  }
+
+  @protected
+  HandSortColumn dco_decode_hand_sort_column(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return HandSortColumn.values[raw as int];
   }
 
   @protected
@@ -512,6 +611,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  int? dco_decode_opt_box_autoadd_u_8(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_u_8(raw);
+  }
+
+  @protected
   int dco_decode_u_32(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as int;
@@ -552,6 +657,20 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  bool sse_decode_bool(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getUint8() != 0;
+  }
+
+  @protected
+  HandQueryRequest sse_decode_box_autoadd_hand_query_request(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_hand_query_request(deserializer));
+  }
+
+  @protected
   PlatformInt64 sse_decode_box_autoadd_i_64(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_i_64(deserializer));
@@ -563,6 +682,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_import_summary(deserializer));
+  }
+
+  @protected
+  int sse_decode_box_autoadd_u_8(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_u_8(deserializer));
   }
 
   @protected
@@ -596,6 +721,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_smallBlind = sse_decode_i_64(deserializer);
     var var_bigBlind = sse_decode_i_64(deserializer);
     var var_playerCount = sse_decode_u_8(deserializer);
+    var var_totalPot = sse_decode_i_64(deserializer);
     return HandListItem(
       id: var_id,
       playedAt: var_playedAt,
@@ -607,6 +733,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       smallBlind: var_smallBlind,
       bigBlind: var_bigBlind,
       playerCount: var_playerCount,
+      totalPot: var_totalPot,
     );
   }
 
@@ -621,6 +748,57 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       nextPlayedAt: var_nextPlayedAt,
       nextId: var_nextId,
     );
+  }
+
+  @protected
+  HandQueryRequest sse_decode_hand_query_request(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_search = sse_decode_String(deserializer);
+    var var_room = sse_decode_String(deserializer);
+    var var_currency = sse_decode_String(deserializer);
+    var var_dateFrom = sse_decode_opt_String(deserializer);
+    var var_dateTo = sse_decode_opt_String(deserializer);
+    var var_minPlayers = sse_decode_opt_box_autoadd_u_8(deserializer);
+    var var_maxPlayers = sse_decode_opt_box_autoadd_u_8(deserializer);
+    var var_sort = sse_decode_hand_sort_column(deserializer);
+    var var_descending = sse_decode_bool(deserializer);
+    var var_page = sse_decode_u_32(deserializer);
+    var var_pageSize = sse_decode_u_32(deserializer);
+    return HandQueryRequest(
+      search: var_search,
+      room: var_room,
+      currency: var_currency,
+      dateFrom: var_dateFrom,
+      dateTo: var_dateTo,
+      minPlayers: var_minPlayers,
+      maxPlayers: var_maxPlayers,
+      sort: var_sort,
+      descending: var_descending,
+      page: var_page,
+      pageSize: var_pageSize,
+    );
+  }
+
+  @protected
+  HandSearchResult sse_decode_hand_search_result(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_hands = sse_decode_list_hand_list_item(deserializer);
+    var var_total = sse_decode_i_64(deserializer);
+    var var_page = sse_decode_u_32(deserializer);
+    var var_pageSize = sse_decode_u_32(deserializer);
+    return HandSearchResult(
+      hands: var_hands,
+      total: var_total,
+      page: var_page,
+      pageSize: var_pageSize,
+    );
+  }
+
+  @protected
+  HandSortColumn sse_decode_hand_sort_column(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_i_32(deserializer);
+    return HandSortColumn.values[inner];
   }
 
   @protected
@@ -755,6 +933,17 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  int? sse_decode_opt_box_autoadd_u_8(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_u_8(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
   int sse_decode_u_32(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return deserializer.buffer.getUint32();
@@ -769,12 +958,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   @protected
   void sse_decode_unit(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-  }
-
-  @protected
-  bool sse_decode_bool(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return deserializer.buffer.getUint8() != 0;
   }
 
   @protected
@@ -810,6 +993,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_bool(bool self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putUint8(self ? 1 : 0);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_hand_query_request(
+    HandQueryRequest self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_hand_query_request(self, serializer);
+  }
+
+  @protected
   void sse_encode_box_autoadd_i_64(
     PlatformInt64 self,
     SseSerializer serializer,
@@ -825,6 +1023,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_import_summary(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_u_8(int self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_u_8(self, serializer);
   }
 
   @protected
@@ -853,6 +1057,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_i_64(self.smallBlind, serializer);
     sse_encode_i_64(self.bigBlind, serializer);
     sse_encode_u_8(self.playerCount, serializer);
+    sse_encode_i_64(self.totalPot, serializer);
   }
 
   @protected
@@ -861,6 +1066,46 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_list_hand_list_item(self.hands, serializer);
     sse_encode_opt_String(self.nextPlayedAt, serializer);
     sse_encode_opt_box_autoadd_i_64(self.nextId, serializer);
+  }
+
+  @protected
+  void sse_encode_hand_query_request(
+    HandQueryRequest self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.search, serializer);
+    sse_encode_String(self.room, serializer);
+    sse_encode_String(self.currency, serializer);
+    sse_encode_opt_String(self.dateFrom, serializer);
+    sse_encode_opt_String(self.dateTo, serializer);
+    sse_encode_opt_box_autoadd_u_8(self.minPlayers, serializer);
+    sse_encode_opt_box_autoadd_u_8(self.maxPlayers, serializer);
+    sse_encode_hand_sort_column(self.sort, serializer);
+    sse_encode_bool(self.descending, serializer);
+    sse_encode_u_32(self.page, serializer);
+    sse_encode_u_32(self.pageSize, serializer);
+  }
+
+  @protected
+  void sse_encode_hand_search_result(
+    HandSearchResult self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_list_hand_list_item(self.hands, serializer);
+    sse_encode_i_64(self.total, serializer);
+    sse_encode_u_32(self.page, serializer);
+    sse_encode_u_32(self.pageSize, serializer);
+  }
+
+  @protected
+  void sse_encode_hand_sort_column(
+    HandSortColumn self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.index, serializer);
   }
 
   @protected
@@ -978,6 +1223,16 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_opt_box_autoadd_u_8(int? self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_u_8(self, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_u_32(int self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     serializer.buffer.putUint32(self);
@@ -992,11 +1247,5 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   @protected
   void sse_encode_unit(void self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
-  }
-
-  @protected
-  void sse_encode_bool(bool self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    serializer.buffer.putUint8(self ? 1 : 0);
   }
 }

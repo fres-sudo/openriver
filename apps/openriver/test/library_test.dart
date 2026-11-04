@@ -30,6 +30,16 @@ class FakeCore implements OpenRiverCore {
     HandCursor? cursor,
   }) async => const StoredHandPage([], null);
   @override
+  Future<HandSearchResult> searchHands(
+    String databasePath,
+    HandSearchQuery query,
+  ) async => HandSearchResult(
+    hands: const [],
+    total: 0,
+    page: query.page,
+    pageSize: query.pageSize,
+  );
+  @override
   Future<String> handReplayJson(String databasePath, int handId) =>
       throw UnimplementedError();
   @override
@@ -58,7 +68,7 @@ HandImportReport _report({
   diagnostics: diagnostics,
 );
 
-const info = LibraryInfo(coreVersion: '0.1.0', schemaVersion: 2);
+const info = LibraryInfo(coreVersion: '0.1.0', schemaVersion: 3);
 const privatePath = '/private/player/history.txt';
 
 Future<void> _pumpApp(
@@ -342,7 +352,7 @@ void main() {
       await tester.tap(find.text('Settings').first);
       await tester.pumpAndSettle();
       expect(find.text('Core version 0.1.0'), findsOneWidget);
-      expect(find.text('Library schema 2'), findsOneWidget);
+      expect(find.text('Library schema 3'), findsOneWidget);
     });
 
     testWidgets('back returns to the library, then leaves the app', (
