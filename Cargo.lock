@@ -1063,6 +1063,7 @@ dependencies = [
  "openriver_domain",
  "openriver_parser",
  "proptest",
+ "serde",
  "serde_json",
  "thiserror",
 ]
@@ -1073,8 +1074,10 @@ version = "0.1.0"
 dependencies = [
  "flutter_rust_bridge",
  "libc",
+ "openriver_analytics",
  "openriver_parser",
  "openriver_storage",
+ "serde_json",
  "sha2",
 ]
 

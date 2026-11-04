@@ -6,6 +6,8 @@ import 'package:integration_test/integration_test.dart';
 import 'package:openriver/app/openriver_app.dart';
 import 'package:openriver/features/library/library_cubit.dart';
 import 'package:openriver/features/library/library_page.dart';
+import 'package:openriver/features/replay/replay_decode.dart';
+import 'package:openriver/features/replay/replay_models.dart';
 import 'package:openriver_api/openriver_api.dart';
 import 'package:path/path.dart' as path;
 
@@ -67,6 +69,15 @@ void main() {
     );
     await core.initializeLibrary(database);
     expect(await core.storedHandCount(database), 1);
+    final page = await core.listHands(database);
+    expect(page.hands, hasLength(1));
+    expect(page.hands.single.externalHandId, '2001');
+    expect(page.nextCursor, isNull);
+    final replay = decodeReplay(
+      await core.handReplayJson(database, page.hands.single.id),
+    );
+    expect(replay.steps.first.event, isA<Start>());
+    expect(replay.steps.last.event, isA<AwardStep>());
     final repeated = await core.importHandHistory(database, history.path);
     expect((repeated.imported, repeated.duplicates), (0, 1));
 

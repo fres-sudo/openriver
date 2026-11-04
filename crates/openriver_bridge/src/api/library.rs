@@ -40,6 +40,7 @@ impl From<StorageError> for CoreError {
             StorageError::Serialization(_) => Self::DatabaseUnavailable,
             StorageError::InvalidHand => Self::InvalidSource,
             StorageError::Cancelled => Self::Cancelled,
+            StorageError::InvalidStoredHand => Self::InvalidSource,
         }
     }
 }
@@ -66,6 +67,71 @@ pub struct ImportEvent {
     pub processed: u32,
     pub total: u32,
     pub summary: Option<ImportSummary>,
+}
+
+pub struct HandListItem {
+    pub id: i64,
+    pub played_at: String,
+    pub room: String,
+    pub external_hand_id: String,
+    pub table_name: String,
+    pub currency: String,
+    pub currency_scale: u8,
+    pub small_blind: i64,
+    pub big_blind: i64,
+    pub player_count: u8,
+}
+
+pub struct HandPage {
+    pub hands: Vec<HandListItem>,
+    pub next_played_at: Option<String>,
+    pub next_id: Option<i64>,
+}
+
+pub async fn list_hands(
+    database_path: String,
+    cursor_played_at: Option<String>,
+    cursor_id: Option<i64>,
+) -> Result<HandPage, CoreError> {
+    let library = Library::open(std::path::Path::new(&database_path)).await?;
+    let cursor = cursor_played_at.as_deref().zip(cursor_id);
+    let mut rows = library.list_hands(31, cursor).await?;
+    library.close().await;
+    let has_more = rows.len() > 30;
+    rows.truncate(30);
+    let next = if has_more { rows.last() } else { None };
+    let next_played_at = next.map(|row| row.played_at.clone());
+    let next_id = next.map(|row| row.id);
+    Ok(HandPage {
+        hands: rows
+            .into_iter()
+            .map(|row| HandListItem {
+                id: row.id,
+                played_at: row.played_at,
+                room: row.room,
+                external_hand_id: row.external_hand_id,
+                table_name: row.table_name,
+                currency: row.currency,
+                currency_scale: row.currency_scale,
+                small_blind: row.small_blind,
+                big_blind: row.big_blind,
+                player_count: row.player_count,
+            })
+            .collect(),
+        next_played_at,
+        next_id,
+    })
+}
+
+/// Rust computes every replay snapshot; Dart only renders this serialized view.
+pub async fn hand_replay(database_path: String, hand_id: i64) -> Result<String, CoreError> {
+    let library = Library::open(std::path::Path::new(&database_path)).await?;
+    let hand = library.get_hand(hand_id).await?;
+    library.close().await;
+    let hand = hand.ok_or(CoreError::InvalidSource)?;
+    let replay =
+        openriver_analytics::replay::replay(&hand).map_err(|_| CoreError::InvalidSource)?;
+    serde_json::to_string(&replay).map_err(|_| CoreError::InvalidSource)
 }
 
 /// Asks the running import to stop; its uncommitted batch is discarded.
@@ -158,4 +224,29 @@ pub async fn initialize_library(database_path: String) -> Result<CoreStatus, Cor
 #[flutter_rust_bridge::frb(init)]
 pub fn init_app() {
     flutter_rust_bridge::setup_default_user_utils();
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn replay_json_keeps_rust_snapshot_shape() {
+        let parsed =
+            openriver_parser::parse(include_bytes!("../../../../fixtures/hands/normal_fold.txt"))
+                .unwrap();
+        let replay = openriver_analytics::replay::replay(&parsed.hands[0]).unwrap();
+        let wire = serde_json::to_value(replay).unwrap();
+        let steps = wire["steps"].as_array().unwrap();
+        assert_eq!(steps[0]["event"], "Start");
+        assert_eq!(steps[0]["seats"][0]["position"], "Button");
+        assert_eq!(
+            steps[1]["event"]["Action"]["kind"]["PostSmallBlind"]["amount_added"],
+            1
+        );
+        assert!(steps
+            .iter()
+            .any(|step| step["event"]["Street"]["street"] == "Flop"));
+        assert!(steps
+            .iter()
+            .any(|step| step["event"]["Award"]["amount"] == 4));
+    }
 }

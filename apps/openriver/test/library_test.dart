@@ -25,6 +25,14 @@ class FakeCore implements OpenRiverCore {
   @override
   Future<int> storedHandCount(String databasePath) async => 0;
   @override
+  Future<StoredHandPage> listHands(
+    String databasePath, {
+    HandCursor? cursor,
+  }) async => const StoredHandPage([], null);
+  @override
+  Future<String> handReplayJson(String databasePath, int handId) =>
+      throw UnimplementedError();
+  @override
   Future<HandImportReport> importHandHistory(
     String databasePath,
     String filePath, {

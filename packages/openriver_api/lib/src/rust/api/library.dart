@@ -8,6 +8,25 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `fmt`, `fmt`, `from`
 
+Future<HandPage> listHands({
+  required String databasePath,
+  String? cursorPlayedAt,
+  PlatformInt64? cursorId,
+}) => RustLib.instance.api.crateApiLibraryListHands(
+  databasePath: databasePath,
+  cursorPlayedAt: cursorPlayedAt,
+  cursorId: cursorId,
+);
+
+/// Rust computes every replay snapshot; Dart only renders this serialized view.
+Future<String> handReplay({
+  required String databasePath,
+  required PlatformInt64 handId,
+}) => RustLib.instance.api.crateApiLibraryHandReplay(
+  databasePath: databasePath,
+  handId: handId,
+);
+
 /// Asks the running import to stop; its uncommitted batch is discarded.
 void cancelImport() => RustLib.instance.api.crateApiLibraryCancelImport();
 
@@ -58,6 +77,81 @@ class CoreStatus {
           runtimeType == other.runtimeType &&
           coreVersion == other.coreVersion &&
           schemaVersion == other.schemaVersion;
+}
+
+class HandListItem {
+  final PlatformInt64 id;
+  final String playedAt;
+  final String room;
+  final String externalHandId;
+  final String tableName;
+  final String currency;
+  final int currencyScale;
+  final PlatformInt64 smallBlind;
+  final PlatformInt64 bigBlind;
+  final int playerCount;
+
+  const HandListItem({
+    required this.id,
+    required this.playedAt,
+    required this.room,
+    required this.externalHandId,
+    required this.tableName,
+    required this.currency,
+    required this.currencyScale,
+    required this.smallBlind,
+    required this.bigBlind,
+    required this.playerCount,
+  });
+
+  @override
+  int get hashCode =>
+      id.hashCode ^
+      playedAt.hashCode ^
+      room.hashCode ^
+      externalHandId.hashCode ^
+      tableName.hashCode ^
+      currency.hashCode ^
+      currencyScale.hashCode ^
+      smallBlind.hashCode ^
+      bigBlind.hashCode ^
+      playerCount.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is HandListItem &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          playedAt == other.playedAt &&
+          room == other.room &&
+          externalHandId == other.externalHandId &&
+          tableName == other.tableName &&
+          currency == other.currency &&
+          currencyScale == other.currencyScale &&
+          smallBlind == other.smallBlind &&
+          bigBlind == other.bigBlind &&
+          playerCount == other.playerCount;
+}
+
+class HandPage {
+  final List<HandListItem> hands;
+  final String? nextPlayedAt;
+  final PlatformInt64? nextId;
+
+  const HandPage({required this.hands, this.nextPlayedAt, this.nextId});
+
+  @override
+  int get hashCode => hands.hashCode ^ nextPlayedAt.hashCode ^ nextId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is HandPage &&
+          runtimeType == other.runtimeType &&
+          hands == other.hands &&
+          nextPlayedAt == other.nextPlayedAt &&
+          nextId == other.nextId;
 }
 
 class ImportDiagnostic {

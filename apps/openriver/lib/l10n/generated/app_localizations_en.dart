@@ -125,6 +125,41 @@ class AppLocalizationsEn extends AppLocalizations {
   String get handsDescription => 'Every hand you have imported.';
 
   @override
+  String get handsLoading => 'Loading hands…';
+
+  @override
+  String get handsLoadMore => 'Load more hands';
+
+  @override
+  String get handsLoadFailed => 'Hands could not be loaded. Please try again.';
+
+  @override
+  String get handsReplayFailed =>
+      'This hand could not be opened. Please try again.';
+
+  @override
+  String get handsOpenReplay => 'Replay hand';
+
+  @override
+  String get handsOpeningReplay => 'Opening replay…';
+
+  @override
+  String handsRowDetails(String played, String room, String handId) {
+    return '$played · $room · Hand #$handId';
+  }
+
+  @override
+  String handsRowGame(String smallBlind, String bigBlind, int players) {
+    String _temp0 = intl.Intl.pluralLogic(
+      players,
+      locale: localeName,
+      other: '$players players',
+      one: '1 player',
+    );
+    return 'Blinds $smallBlind/$bigBlind · $_temp0';
+  }
+
+  @override
   String get handsComingTitle => 'Browsing hands is coming';
 
   @override

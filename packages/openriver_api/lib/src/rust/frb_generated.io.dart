@@ -30,6 +30,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   String dco_decode_String(dynamic raw);
 
   @protected
+  PlatformInt64 dco_decode_box_autoadd_i_64(dynamic raw);
+
+  @protected
   ImportSummary dco_decode_box_autoadd_import_summary(dynamic raw);
 
   @protected
@@ -39,7 +42,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   CoreStatus dco_decode_core_status(dynamic raw);
 
   @protected
+  HandListItem dco_decode_hand_list_item(dynamic raw);
+
+  @protected
+  HandPage dco_decode_hand_page(dynamic raw);
+
+  @protected
   int dco_decode_i_32(dynamic raw);
+
+  @protected
+  PlatformInt64 dco_decode_i_64(dynamic raw);
 
   @protected
   ImportDiagnostic dco_decode_import_diagnostic(dynamic raw);
@@ -51,6 +63,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   ImportSummary dco_decode_import_summary(dynamic raw);
 
   @protected
+  List<HandListItem> dco_decode_list_hand_list_item(dynamic raw);
+
+  @protected
   List<ImportDiagnostic> dco_decode_list_import_diagnostic(dynamic raw);
 
   @protected
@@ -58,6 +73,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   String? dco_decode_opt_String(dynamic raw);
+
+  @protected
+  PlatformInt64? dco_decode_opt_box_autoadd_i_64(dynamic raw);
 
   @protected
   ImportSummary? dco_decode_opt_box_autoadd_import_summary(dynamic raw);
@@ -83,6 +101,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   String sse_decode_String(SseDeserializer deserializer);
 
   @protected
+  PlatformInt64 sse_decode_box_autoadd_i_64(SseDeserializer deserializer);
+
+  @protected
   ImportSummary sse_decode_box_autoadd_import_summary(
     SseDeserializer deserializer,
   );
@@ -94,7 +115,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   CoreStatus sse_decode_core_status(SseDeserializer deserializer);
 
   @protected
+  HandListItem sse_decode_hand_list_item(SseDeserializer deserializer);
+
+  @protected
+  HandPage sse_decode_hand_page(SseDeserializer deserializer);
+
+  @protected
   int sse_decode_i_32(SseDeserializer deserializer);
+
+  @protected
+  PlatformInt64 sse_decode_i_64(SseDeserializer deserializer);
 
   @protected
   ImportDiagnostic sse_decode_import_diagnostic(SseDeserializer deserializer);
@@ -106,6 +136,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   ImportSummary sse_decode_import_summary(SseDeserializer deserializer);
 
   @protected
+  List<HandListItem> sse_decode_list_hand_list_item(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   List<ImportDiagnostic> sse_decode_list_import_diagnostic(
     SseDeserializer deserializer,
   );
@@ -115,6 +150,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   String? sse_decode_opt_String(SseDeserializer deserializer);
+
+  @protected
+  PlatformInt64? sse_decode_opt_box_autoadd_i_64(SseDeserializer deserializer);
 
   @protected
   ImportSummary? sse_decode_opt_box_autoadd_import_summary(
@@ -149,6 +187,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_String(String self, SseSerializer serializer);
 
   @protected
+  void sse_encode_box_autoadd_i_64(
+    PlatformInt64 self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_import_summary(
     ImportSummary self,
     SseSerializer serializer,
@@ -161,7 +205,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_core_status(CoreStatus self, SseSerializer serializer);
 
   @protected
+  void sse_encode_hand_list_item(HandListItem self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_hand_page(HandPage self, SseSerializer serializer);
+
+  @protected
   void sse_encode_i_32(int self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_i_64(PlatformInt64 self, SseSerializer serializer);
 
   @protected
   void sse_encode_import_diagnostic(
@@ -174,6 +227,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_import_summary(ImportSummary self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_list_hand_list_item(
+    List<HandListItem> self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_list_import_diagnostic(
@@ -189,6 +248,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_opt_String(String? self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_opt_box_autoadd_i_64(
+    PlatformInt64? self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_opt_box_autoadd_import_summary(

@@ -1,6 +1,6 @@
 # Next step: first trustworthy hand-history import
 
-**Status:** In progress (synthetic import slice and local performance measurement complete; compatibility and platform gates pending) · **Updated:** 2026-10-24
+**Status:** In progress (synthetic import slice and local performance measurement complete; compatibility and platform gates pending) · **Updated:** 2026-11-04
 
 **Target:** Finish the remaining import-related Milestone 0 proof, then deliver the first vertical slice of Milestone 1. This is an implementation guide, not a claim that importing already works.
 
@@ -127,3 +127,7 @@ Begin with **step 1 and the golden side-pot fixture**. It sets the canonical acc
 - `import_hand_history` now streams `ImportEvent`s (processed/total hands every 250 hands, then a final event carrying the summary), and a `cancel_import` command stops the running import. Storage checks the cancel flag inside the batch transaction, so a cancelled file is rolled back and leaves no batch, hands, or diagnostics. The Dart facade keeps `importHandHistory` as a Future with an optional `onProgress` callback plus `cancelImport()`, and the library screen shows a determinate bar, a count, and a Cancel button. Cancelling reports that nothing from the file was added.
 - Bindings were regenerated with the pinned `flutter_rust_bridge_codegen` 2.12.0 (which also needs `cargo-expand` 1.0.126). The full local `dart run melos run check` passed on macOS with Flutter 3.41.2 from FVM, including a new storage test for progress and rollback on cancel and a new widget test for progress and cancel. Only the 10,000-hand import was previously measured; the progress path was not re-timed, and neither a packaged native run nor a mobile run exercised it. Cancelling mid-parse is not possible: the parse step is synchronous and short, so only the write phase is cancellable.
 - Re-timed the 10,000-hand Rust import with progress enabled (release build, macOS): parse 68 ms, write 203 ms, repeat 77 ms; see [verification.md](verification.md). Remaining gates are unchanged and need outside input: a lawfully usable live export sample, Android and iOS chooser/import checks on a device or simulator (which needs your go-ahead to launch), and a green Windows/Linux CI run for the pushed fixes.
+
+### Stored hands browser and replay, 2026-11-04
+
+- The Hands page now loads stored hands in 30-row keyset pages and opens a selected hand in the replay view using snapshots computed by Rust. It refreshes after a successful import. The full local check passed, including new storage, bridge-shape, decoding, and widget tests. The packaged native integration assertion was added but not run, and search, filters, player-specific results, notes, and tags remain later work. The import compatibility and platform gates above are unchanged.

@@ -12,6 +12,8 @@ crate-type = ["cdylib", "staticlib", "rlib"]
 flutter_rust_bridge.workspace = true
 openriver_storage.workspace = true
 openriver_parser.workspace = true
+openriver_analytics.workspace = true
+serde_json = "1"
 sha2 = "0.10"
 
 # Generated FFI glue uses unsafe code; domain/storage crates forbid it.

@@ -20,17 +20,21 @@ final class ReplayFormat {
           .replaceFirst(RegExp(r'\.?0+$'), '');
       return strings.amountInBigBlinds(blinds);
     }
-    final scale = replay.currencyScale;
+    return currencyAmount(chips, replay.currency, replay.currencyScale);
+  }
+
+  /// Formats integer minor units without floating-point rounding.
+  static String currencyAmount(int chips, String currency, int scale) {
     final sign = chips < 0 ? '-' : '';
     final digits = chips.abs().toString().padLeft(scale + 1, '0');
     final whole = _group(digits.substring(0, digits.length - scale));
     final fraction = scale == 0
         ? ''
         : '.${digits.substring(digits.length - scale)}';
-    final symbol = _symbols[replay.currency];
+    final symbol = _symbols[currency];
     if (symbol != null) return '$sign$symbol$whole$fraction';
     final number = '$sign$whole$fraction';
-    return replay.currency.isEmpty ? number : '$number ${replay.currency}';
+    return currency.isEmpty ? number : '$number $currency';
   }
 
   static String _group(String whole) {

@@ -2,7 +2,7 @@
 
 Local-first poker study for **Windows, macOS, Linux, Android, and iOS**, using a shared Flutter application and a Rust core.
 
-This repository includes a first synthetic hand-history import slice. The app opens a local SQLite library, selects a text file, validates supported synthetic NLHE hands in Rust, stores accepted hands, and reports duplicates and rejections. Live room compatibility, poker statistics, replay, coaching, and sync are not yet implemented.
+This repository includes a first synthetic hand-history import slice. The app opens a local SQLite library, selects a text file, validates supported synthetic NLHE hands in Rust, stores accepted hands, and reports duplicates and rejections. Imported hands appear in a paginated list and can open in the hand replayer. Live room compatibility, poker statistics, coaching, and sync are not yet implemented.
 
 ## Quick start
 

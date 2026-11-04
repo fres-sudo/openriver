@@ -1,0 +1,29 @@
+const replayJson = '''{
+  "currency":"USD","currency_scale":2,"small_blind":1,"big_blind":2,
+  "ante":0,"table_capacity":2,"button_seat":1,
+  "steps":[
+    {"event":"Start","street":"Preflop","board":[],"seats":[
+      {"seat":1,"name":"Ada","position":"SmallBlind","stack":100,
+       "bet":0,"status":"Active","last_action":null,
+       "hole_cards":[{"rank":"Ace","suit":"Spades"},null],"won":0},
+      {"seat":2,"name":"Bo","position":"BigBlind","stack":100,
+       "bet":0,"status":"Active","last_action":null,
+       "hole_cards":null,"won":0}
+    ],"pot":0,"pots":[],"next_to_act":null},
+    {"event":{"Action":{"sequence":1,"street":"Preflop","seat":1,
+       "kind":{"PostSmallBlind":{"amount_added":1}},"all_in":false}},
+     "street":"Preflop","board":[],"seats":[
+      {"seat":1,"name":"Ada","position":"SmallBlind","stack":99,
+       "bet":1,"status":"Active","last_action":{"PostSmallBlind":{"amount_added":1}},
+       "hole_cards":[{"rank":"Ace","suit":"Spades"},null],"won":0},
+      {"seat":2,"name":"Bo","position":"BigBlind","stack":100,
+       "bet":0,"status":"Active","last_action":null,"hole_cards":null,"won":0}
+    ],"pot":0,"pots":[],"next_to_act":null},
+    {"event":{"Street":{"street":"Flop","cards":[{"rank":"Two","suit":"Clubs"}]}},
+     "street":"Flop","board":[{"rank":"Two","suit":"Clubs"}],"seats":[],
+     "pot":3,"pots":[],"next_to_act":null},
+    {"event":{"Award":{"pot_index":0,"seat":1,"amount":3}},
+     "street":"Flop","board":[{"rank":"Two","suit":"Clubs"}],"seats":[],
+     "pot":0,"pots":[{"amount":3,"eligible_seats":[1,2]}],"next_to_act":null}
+  ]
+}''';

@@ -94,7 +94,7 @@ These are poker-specific, so they live in `apps/openriver/lib/features/replay/` 
 
 ## Hand replayer
 
-`ReplayView` composes the table, a live-region announcement of each step, `ReplayControls`, and `ActionLog`, driven by `ReplayCubit`. Expanded and wider content regions put the log beside the table. Medium regions put it in a bottom panel. Compact regions open it in a `showRiverOverlay` sheet. Keyboard: ← and → step, Home and End jump to the ends, 1–5 jump to a street, and Space plays or pauses unless a focused control handles activation. Debug builds open a sample replay from the Hands page.
+`ReplayView` composes the table, a live-region announcement of each step, `ReplayControls`, and `ActionLog`, driven by `ReplayCubit`. Expanded and wider content regions put the log beside the table. Medium regions put it in a bottom panel. Compact regions open it in a `showRiverOverlay` sheet. Keyboard: ← and → step, Home and End jump to the ends, 1–5 jump to a street, and Space plays or pauses unless a focused control handles activation. The Hands page lists stored hands 30 at a time, newest first; selecting one loads snapshots computed by Rust and opens its replay. Debug builds also offer a built-in sample replay.
 
 ## Current migration
 

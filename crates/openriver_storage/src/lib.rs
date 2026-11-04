@@ -1,6 +1,6 @@
 //! The sole owner of local SQLite connections and migrations.
 
-use openriver_domain::validate_hand;
+use openriver_domain::{validate_hand, Hand};
 use openriver_parser::{ParseDiagnostic, ParseResult};
 use sqlx::{
     sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions},
@@ -28,6 +28,8 @@ pub enum StorageError {
     InvalidHand,
     #[error("the import was cancelled")]
     Cancelled,
+    #[error("the stored hand is invalid")]
+    InvalidStoredHand,
 }
 
 pub struct Library {
@@ -159,6 +161,71 @@ impl Library {
             .fetch_one(&self.pool)
             .await?)
     }
+
+    /// Newest first, with the row id breaking equal-timestamp ties. The
+    /// cursor is the last row returned by the previous page.
+    pub async fn list_hands(
+        &self,
+        limit: i64,
+        cursor: Option<(&str, i64)>,
+    ) -> Result<Vec<StoredHandSummary>, StorageError> {
+        let limit = limit.clamp(1, 50);
+        let (played_at, id) = cursor.unwrap_or(("", 0));
+        let rows: Vec<(i64, String, String)> = sqlx::query_as(
+            "SELECT id, played_at, canonical_json FROM imported_hands \
+             WHERE (? = '' OR played_at < ? OR (played_at = ? AND id < ?)) \
+             ORDER BY played_at DESC, id DESC LIMIT ?",
+        )
+        .bind(played_at)
+        .bind(played_at)
+        .bind(played_at)
+        .bind(id)
+        .bind(limit)
+        .fetch_all(&self.pool)
+        .await?;
+        rows.into_iter()
+            .map(|(id, played_at, json)| {
+                let hand: Hand =
+                    serde_json::from_str(&json).map_err(|_| StorageError::InvalidStoredHand)?;
+                Ok(StoredHandSummary {
+                    id,
+                    played_at,
+                    room: hand.provenance.room,
+                    external_hand_id: hand.provenance.external_hand_id,
+                    table_name: hand.table_name,
+                    currency: hand.game.currency,
+                    currency_scale: hand.game.currency_scale,
+                    small_blind: hand.game.small_blind.0,
+                    big_blind: hand.game.big_blind.0,
+                    player_count: hand.players.len() as u8,
+                })
+            })
+            .collect()
+    }
+
+    pub async fn get_hand(&self, id: i64) -> Result<Option<Hand>, StorageError> {
+        let json: Option<String> =
+            sqlx::query_scalar("SELECT canonical_json FROM imported_hands WHERE id = ?")
+                .bind(id)
+                .fetch_optional(&self.pool)
+                .await?;
+        json.map(|json| serde_json::from_str(&json).map_err(|_| StorageError::InvalidStoredHand))
+            .transpose()
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StoredHandSummary {
+    pub id: i64,
+    pub played_at: String,
+    pub room: String,
+    pub external_hand_id: String,
+    pub table_name: String,
+    pub currency: String,
+    pub currency_scale: u8,
+    pub small_blind: i64,
+    pub big_blind: i64,
+    pub player_count: u8,
 }
 
 #[derive(Clone, Debug)]
@@ -252,7 +319,69 @@ mod tests {
         let summary = library.import(&overlap, "overlap-file").await.unwrap();
         assert_eq!((summary.imported, summary.duplicates), (0, 1));
         assert_eq!(library.hand_count().await.unwrap(), 1);
+        let listed = library.list_hands(30, None).await.unwrap();
+        assert_eq!(listed.len(), 1);
+        assert_eq!(listed[0].external_hand_id, "1001");
+        let restored = library.get_hand(listed[0].id).await.unwrap().unwrap();
+        assert_eq!(restored.provenance.external_hand_id, "1001");
+        assert!(library.get_hand(i64::MAX).await.unwrap().is_none());
         library.close().await;
+    }
+
+    #[tokio::test]
+    async fn hand_list_pages_across_equal_timestamps_without_duplicates() {
+        let dir = tempfile::tempdir().unwrap();
+        let library = Library::open(&dir.path().join("library.sqlite3"))
+            .await
+            .unwrap();
+        let template = include_str!("../../../fixtures/hands/normal_fold.txt");
+        let source = (0..4)
+            .map(|i| {
+                template
+                    .replace("Hand #1002", &format!("Hand #{}", 4000 + i))
+                    .replace(
+                        "2026/10/23 12:01:00",
+                        if i == 0 {
+                            "2026/10/23 12:00:00"
+                        } else {
+                            "2026/10/23 12:01:00"
+                        },
+                    )
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+        let parsed = openriver_parser::parse(source.as_bytes()).unwrap();
+        assert_eq!(
+            library
+                .import(&parsed, "four-hands")
+                .await
+                .unwrap()
+                .imported,
+            4
+        );
+        let first = library.list_hands(2, None).await.unwrap();
+        let second = library
+            .list_hands(2, Some((&first[1].played_at, first[1].id)))
+            .await
+            .unwrap();
+        assert_eq!(first.len(), 2);
+        assert_eq!(second.len(), 2);
+        let ids: Vec<_> = first.iter().chain(&second).map(|row| row.id).collect();
+        assert_eq!(ids.len(), 4);
+        assert_eq!(
+            ids.iter()
+                .copied()
+                .collect::<std::collections::HashSet<_>>()
+                .len(),
+            4
+        );
+        assert!(first[0].played_at >= first[1].played_at);
+        assert!(second[0].played_at >= second[1].played_at);
+        assert!(library
+            .list_hands(2, Some((&second[1].played_at, second[1].id)))
+            .await
+            .unwrap()
+            .is_empty());
     }
 
     #[tokio::test]

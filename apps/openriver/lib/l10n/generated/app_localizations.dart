@@ -286,6 +286,54 @@ abstract class AppLocalizations {
   /// **'Every hand you have imported.'**
   String get handsDescription;
 
+  /// No description provided for @handsLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading hands…'**
+  String get handsLoading;
+
+  /// No description provided for @handsLoadMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Load more hands'**
+  String get handsLoadMore;
+
+  /// No description provided for @handsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Hands could not be loaded. Please try again.'**
+  String get handsLoadFailed;
+
+  /// No description provided for @handsReplayFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'This hand could not be opened. Please try again.'**
+  String get handsReplayFailed;
+
+  /// No description provided for @handsOpenReplay.
+  ///
+  /// In en, this message translates to:
+  /// **'Replay hand'**
+  String get handsOpenReplay;
+
+  /// No description provided for @handsOpeningReplay.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening replay…'**
+  String get handsOpeningReplay;
+
+  /// No description provided for @handsRowDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'{played} · {room} · Hand #{handId}'**
+  String handsRowDetails(String played, String room, String handId);
+
+  /// No description provided for @handsRowGame.
+  ///
+  /// In en, this message translates to:
+  /// **'Blinds {smallBlind}/{bigBlind} · {players, plural, =1{1 player} other{{players} players}}'**
+  String handsRowGame(String smallBlind, String bigBlind, int players);
+
   /// No description provided for @handsComingTitle.
   ///
   /// In en, this message translates to:

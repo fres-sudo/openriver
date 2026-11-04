@@ -1,5 +1,6 @@
 //! Table positions derived from the button and the blinds actually posted.
 
+use serde::Serialize;
 use std::collections::BTreeMap;
 
 /// A player's seat relative to the dealer button.
@@ -9,7 +10,7 @@ use std::collections::BTreeMap;
 /// and `Lojack` (counting back from the button); any seats in between are
 /// `Utg1`, `Utg2`, ... in action order. Heads-up, the button posts the small
 /// blind and is reported as `Button`.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize)]
 pub enum Position {
     SmallBlind,
     BigBlind,

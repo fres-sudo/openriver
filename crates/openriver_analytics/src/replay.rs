@@ -8,8 +8,9 @@
 use crate::analysis::{analyze, AnalysisError};
 use crate::position::Position;
 use openriver_domain::{ActionEvent, ActionKind, Card, Chips, Hand, Pot, Street};
+use serde::Serialize;
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct Replay {
     pub currency: String,
     pub currency_scale: u8,
@@ -23,7 +24,7 @@ pub struct Replay {
 }
 
 /// What changed between the previous step and this one.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub enum ReplayEvent {
     /// Players seated with their starting stacks; nothing posted yet.
     Start,
@@ -44,7 +45,7 @@ pub enum ReplayEvent {
     },
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 pub enum SeatStatus {
     /// Still in the hand with chips behind.
     Active,
@@ -52,7 +53,7 @@ pub enum SeatStatus {
     AllIn,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct SeatView {
     pub seat: u8,
     pub name: String,
@@ -71,7 +72,7 @@ pub struct SeatView {
     pub won: Chips,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct ReplayStep {
     pub event: ReplayEvent,
     pub street: Street,

@@ -1,5 +1,9 @@
 # Verification
 
+## Stored hands browser and replay, 2026-11-04
+
+`fvm dart run melos run check` passed on the working tree: formatting, analysis, Flutter tests, Rust Clippy, and Rust workspace tests. The new Rust tests cover keyset paging across equal timestamps, loading a persisted hand, and the serialized replay snapshot shape. Flutter tests cover paging, opening a stored hand's replay, and decoding replay events. Flutter Rust Bridge bindings were regenerated with the pinned 2.12.0 generator. The packaged macOS integration test now asserts list and replay calls for an imported synthetic hand, but it was not run for this increment, so native Dart → Rust → SQLite replay remains unverified in a packaged app.
+
 ## CI readiness, 2026-10-29
 
 `dart run melos run check` passed on clean commit `cadb5de` before the CI trigger edit. It included Dart formatting and analysis, 10 Flutter widget tests, Rust formatting and Clippy, 21 parser tests, and the other Rust workspace tests. This is a local macOS result; it does not prove Windows or Linux builds.

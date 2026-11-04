@@ -40,6 +40,45 @@ abstract interface class OpenRiverCore {
   /// Stops the running import. Nothing from the cancelled file is stored.
   void cancelImport();
   Future<int> storedHandCount(String databasePath);
+  Future<StoredHandPage> listHands(String databasePath, {HandCursor? cursor});
+  Future<String> handReplayJson(String databasePath, int handId);
+}
+
+final class HandCursor {
+  const HandCursor(this.playedAt, this.id);
+  final String playedAt;
+  final int id;
+}
+
+final class StoredHand {
+  const StoredHand({
+    required this.id,
+    required this.playedAt,
+    required this.room,
+    required this.externalHandId,
+    required this.tableName,
+    required this.currency,
+    required this.currencyScale,
+    required this.smallBlind,
+    required this.bigBlind,
+    required this.playerCount,
+  });
+  final int id;
+  final String playedAt;
+  final String room;
+  final String externalHandId;
+  final String tableName;
+  final String currency;
+  final int currencyScale;
+  final int smallBlind;
+  final int bigBlind;
+  final int playerCount;
+}
+
+final class StoredHandPage {
+  const StoredHandPage(this.hands, this.nextCursor);
+  final List<StoredHand> hands;
+  final HandCursor? nextCursor;
 }
 
 final class ImportProgress {
@@ -174,5 +213,44 @@ final class RustOpenRiverCore implements OpenRiverCore {
   Future<int> storedHandCount(String databasePath) async {
     await _ensureInitialized();
     return native.storedHandCount(databasePath: databasePath);
+  }
+
+  @override
+  Future<StoredHandPage> listHands(
+    String databasePath, {
+    HandCursor? cursor,
+  }) async {
+    await _ensureInitialized();
+    final page = await native.listHands(
+      databasePath: databasePath,
+      cursorPlayedAt: cursor?.playedAt,
+      cursorId: cursor?.id,
+    );
+    return StoredHandPage(
+      [
+        for (final hand in page.hands)
+          StoredHand(
+            id: hand.id,
+            playedAt: hand.playedAt,
+            room: hand.room,
+            externalHandId: hand.externalHandId,
+            tableName: hand.tableName,
+            currency: hand.currency,
+            currencyScale: hand.currencyScale,
+            smallBlind: hand.smallBlind,
+            bigBlind: hand.bigBlind,
+            playerCount: hand.playerCount,
+          ),
+      ],
+      page.nextPlayedAt == null || page.nextId == null
+          ? null
+          : HandCursor(page.nextPlayedAt!, page.nextId!),
+    );
+  }
+
+  @override
+  Future<String> handReplayJson(String databasePath, int handId) async {
+    await _ensureInitialized();
+    return native.handReplay(databasePath: databasePath, handId: handId);
   }
 }
