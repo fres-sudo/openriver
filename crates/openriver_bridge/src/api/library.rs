@@ -1,6 +1,8 @@
 //! Coarse-grained, typed application commands. Never expose SQL to Dart.
 use crate::frb_generated::StreamSink;
-use openriver_storage::{HandQuery, HandSort, Library, StorageError};
+use openriver_analytics::aggregate::{HandFilter, PlayerStats, StatsEngine};
+use openriver_analytics::stats::Stat;
+use openriver_storage::{AnalyticsQuery, HandQuery, HandSort, Library, StorageError};
 use sha2::{Digest, Sha256};
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -21,6 +23,9 @@ pub enum CoreError {
     InvalidSource,
     UnsupportedFormat,
     Cancelled,
+    ExportDestinationExists,
+    InvalidExportPath,
+    ExportFailed,
 }
 
 impl std::fmt::Display for CoreError {
@@ -41,6 +46,9 @@ impl From<StorageError> for CoreError {
             StorageError::InvalidHand => Self::InvalidSource,
             StorageError::Cancelled => Self::Cancelled,
             StorageError::InvalidStoredHand => Self::InvalidSource,
+            StorageError::ExportDestinationExists => Self::ExportDestinationExists,
+            StorageError::InvalidExportPath => Self::InvalidExportPath,
+            StorageError::Export(_) => Self::ExportFailed,
         }
     }
 }
@@ -207,6 +215,351 @@ pub async fn hand_replay(database_path: String, hand_id: i64) -> Result<String, 
     serde_json::to_string(&replay).map_err(|_| CoreError::InvalidSource)
 }
 
+pub struct PlayerAnalyticsRequest {
+    pub room: String,
+    pub player: String,
+    pub currency: String,
+    pub date_from: Option<String>,
+    pub date_to: Option<String>,
+    pub min_big_blind: Option<i64>,
+    pub max_big_blind: Option<i64>,
+}
+
+pub struct AnalyticsPlayer {
+    pub room: String,
+    pub name: String,
+    pub hands: u64,
+}
+
+pub struct CurrencyResults {
+    pub currency: String,
+    pub currency_scale: u8,
+    pub net: i64,
+    pub net_at_showdown: i64,
+    pub net_without_showdown: i64,
+}
+
+pub struct StatisticValue {
+    pub key: String,
+    pub label: String,
+    pub description: String,
+    pub successes: u64,
+    pub eligible: u64,
+    pub rate: Option<f64>,
+    pub interval_low: Option<f64>,
+    pub interval_high: Option<f64>,
+    pub minimum_meaningful_sample: u32,
+}
+
+pub struct PlayerStatistics {
+    pub room: String,
+    pub name: String,
+    pub hands: u64,
+    pub hands_counted: u64,
+    pub net_big_blinds: f64,
+    pub bb_per_100: Option<f64>,
+    pub aggression_factor: Option<f64>,
+    pub aggression_frequency: Option<f64>,
+    pub results: Vec<CurrencyResults>,
+    pub stats: Vec<StatisticValue>,
+}
+
+pub struct ResultPoint {
+    pub sequence: u32,
+    pub played_at: String,
+    pub external_hand_id: String,
+    pub net: i64,
+    pub cumulative_net: i64,
+    pub cumulative_big_blinds: f64,
+}
+
+pub struct PlayerAnalytics {
+    pub players: Vec<AnalyticsPlayer>,
+    pub total_players: u32,
+    pub selected: Option<PlayerStatistics>,
+    pub graph_currency: Option<String>,
+    pub graph_currency_scale: u8,
+    pub points: Vec<ResultPoint>,
+}
+
+pub struct ExportSummary {
+    pub hand_count: u32,
+}
+
+fn analytics_query(request: &PlayerAnalyticsRequest) -> AnalyticsQuery {
+    AnalyticsQuery {
+        room: (!request.room.is_empty()).then(|| request.room.clone()),
+        currency: (!request.currency.is_empty()).then(|| request.currency.to_uppercase()),
+        date_from: request.date_from.clone(),
+        date_to: request.date_to.clone(),
+        min_big_blind: request.min_big_blind,
+        max_big_blind: request.max_big_blind,
+    }
+}
+
+fn analytics_filter(request: &PlayerAnalyticsRequest) -> HandFilter {
+    HandFilter {
+        from: request
+            .date_from
+            .as_ref()
+            .map(|date| format!("{date}T00:00:00Z")),
+        to: request
+            .date_to
+            .as_ref()
+            .map(|date| format!("{date}T23:59:59Z")),
+        currency: (!request.currency.is_empty()).then(|| request.currency.to_uppercase()),
+        min_big_blind: request.min_big_blind,
+        max_big_blind: request.max_big_blind,
+        rooms: (!request.room.is_empty()).then(|| std::iter::once(request.room.clone()).collect()),
+        ..HandFilter::default()
+    }
+}
+
+fn statistics(
+    engine: &StatsEngine,
+    room: String,
+    name: String,
+    stats: &PlayerStats,
+) -> PlayerStatistics {
+    PlayerStatistics {
+        room,
+        name,
+        hands: stats.hands,
+        hands_counted: engine.hands_counted(),
+        net_big_blinds: stats.money.net_big_blinds,
+        bb_per_100: stats.money.bb_per_100(),
+        aggression_factor: stats.postflop.factor(),
+        aggression_frequency: stats.postflop.frequency(),
+        results: stats
+            .money
+            .net
+            .iter()
+            .map(|((currency, scale), net)| CurrencyResults {
+                currency: currency.clone(),
+                currency_scale: *scale,
+                net: *net,
+                net_at_showdown: stats
+                    .money
+                    .net_at_showdown
+                    .get(&(currency.clone(), *scale))
+                    .copied()
+                    .unwrap_or(0),
+                net_without_showdown: stats
+                    .money
+                    .net_without_showdown
+                    .get(&(currency.clone(), *scale))
+                    .copied()
+                    .unwrap_or(0),
+            })
+            .collect(),
+        stats: Stat::ALL
+            .into_iter()
+            .map(|stat| {
+                let count = stats.get(stat);
+                let interval = count.wilson_interval_95();
+                StatisticValue {
+                    key: stat.key().into(),
+                    label: stat.label().into(),
+                    description: stat.description().into(),
+                    successes: count.successes(),
+                    eligible: count.sample_size(),
+                    rate: count.rate(),
+                    interval_low: interval.map(|value| value.0),
+                    interval_high: interval.map(|value| value.1),
+                    minimum_meaningful_sample: stat.minimum_meaningful_sample() as u32,
+                }
+            })
+            .collect(),
+    }
+}
+
+fn sampled_points(points: Vec<ResultPoint>) -> Vec<ResultPoint> {
+    const MAX_POINTS: usize = 500;
+    if points.len() <= MAX_POINTS {
+        return points;
+    }
+    let last = points.len() - 1;
+    let mut next_sample = 0usize;
+    points
+        .into_iter()
+        .enumerate()
+        .filter_map(|(index, point)| {
+            let target = next_sample * last / (MAX_POINTS - 1);
+            if index != target {
+                return None;
+            }
+            next_sample += 1;
+            Some(point)
+        })
+        .collect()
+}
+
+/// Aggregates validated stored hands in Rust. Players are bounded and graph
+/// points are evenly sampled while retaining the first and final results.
+pub async fn player_analytics(
+    database_path: String,
+    request: PlayerAnalyticsRequest,
+) -> Result<PlayerAnalytics, CoreError> {
+    let library = Library::open(std::path::Path::new(&database_path)).await?;
+    let query = analytics_query(&request);
+    let filter = analytics_filter(&request);
+    let mut engine = StatsEngine::new(filter.clone());
+    let mut cursor: Option<(String, i64)> = None;
+    loop {
+        let batch = library
+            .analytics_batch(
+                &query,
+                cursor.as_ref().map(|(date, id)| (date.as_str(), *id)),
+                500,
+            )
+            .await?;
+        if batch.is_empty() {
+            break;
+        }
+        let batch_len = batch.len();
+        cursor = batch.last().map(|row| (row.played_at.clone(), row.id));
+        for row in batch {
+            engine
+                .add_hand(&row.hand)
+                .map_err(|_| CoreError::InvalidSource)?;
+        }
+        if batch_len < 500 {
+            break;
+        }
+    }
+
+    let mut players: Vec<_> = engine
+        .players()
+        .map(|(key, stats)| AnalyticsPlayer {
+            room: key.room.clone(),
+            name: key.name.clone(),
+            hands: stats.hands,
+        })
+        .collect();
+    players.sort_by(|a, b| {
+        b.hands
+            .cmp(&a.hands)
+            .then_with(|| a.room.cmp(&b.room))
+            .then_with(|| a.name.cmp(&b.name))
+    });
+    let total_players = players.len() as u32;
+    let selected_key = if request.player.is_empty() {
+        players
+            .first()
+            .map(|player| (player.room.clone(), player.name.clone()))
+    } else {
+        Some((request.room.clone(), request.player.clone()))
+    };
+    let selected = selected_key.as_ref().and_then(|(room, name)| {
+        engine
+            .player(room, name)
+            .map(|stats| statistics(&engine, room.clone(), name.clone(), stats))
+    });
+    if let Some((room, name)) = &selected_key {
+        if players.len() >= 100 && !players.iter().any(|p| &p.room == room && &p.name == name) {
+            if let Some(stats) = engine.player(room, name) {
+                players.push(AnalyticsPlayer {
+                    room: room.clone(),
+                    name: name.clone(),
+                    hands: stats.hands,
+                });
+            }
+        }
+    }
+    players.truncate(100);
+
+    let graph = selected.as_ref().and_then(|selected| {
+        if request.currency.is_empty() {
+            selected
+                .results
+                .first()
+                .map(|result| (result.currency.clone(), result.currency_scale))
+        } else {
+            let currency = request.currency.to_uppercase();
+            let scale = selected
+                .results
+                .iter()
+                .find(|result| result.currency == currency)
+                .map(|result| result.currency_scale)
+                .unwrap_or(2);
+            Some((currency, scale))
+        }
+    });
+    let mut points = Vec::new();
+    let mut cumulative_net = 0i64;
+    let mut cumulative_big_blinds = 0f64;
+    if let (Some((room, name)), Some((graph_currency, _))) = (&selected_key, &graph) {
+        let mut graph_query = query.clone();
+        graph_query.currency = Some(graph_currency.clone());
+        let mut graph_filter = filter.clone();
+        graph_filter.currency = Some(graph_currency.clone());
+        let mut cursor: Option<(String, i64)> = None;
+        loop {
+            let batch = library
+                .analytics_batch(
+                    &graph_query,
+                    cursor.as_ref().map(|(date, id)| (date.as_str(), *id)),
+                    500,
+                )
+                .await?;
+            if batch.is_empty() {
+                break;
+            }
+            let batch_len = batch.len();
+            cursor = batch.last().map(|row| (row.played_at.clone(), row.id));
+            for row in batch {
+                let analysis = openriver_analytics::analysis::analyze(&row.hand)
+                    .map_err(|_| CoreError::InvalidSource)?;
+                if !graph_filter.hand_matches(&row.hand, &analysis) {
+                    continue;
+                }
+                let Some(player) = analysis.players.iter().find(|player| player.name == *name)
+                else {
+                    continue;
+                };
+                if !graph_filter.player_matches(player) || row.hand.provenance.room != *room {
+                    continue;
+                }
+                cumulative_net += player.net;
+                cumulative_big_blinds += player.net as f64 / analysis.big_blind as f64;
+                points.push(ResultPoint {
+                    sequence: points.len() as u32 + 1,
+                    played_at: row.played_at,
+                    external_hand_id: row.hand.provenance.external_hand_id,
+                    net: player.net,
+                    cumulative_net,
+                    cumulative_big_blinds,
+                });
+            }
+            if batch_len < 500 {
+                break;
+            }
+        }
+    }
+    library.close().await;
+    Ok(PlayerAnalytics {
+        players,
+        total_players,
+        selected,
+        graph_currency_scale: graph.as_ref().map(|value| value.1).unwrap_or(2),
+        graph_currency: graph.map(|value| value.0),
+        points: sampled_points(points),
+    })
+}
+
+/// Creates a consistent SQLite backup without copying the live WAL files.
+pub async fn export_library(
+    database_path: String,
+    destination_path: String,
+) -> Result<ExportSummary, CoreError> {
+    let library = Library::open(std::path::Path::new(&database_path)).await?;
+    let hand_count = library
+        .export_snapshot(std::path::Path::new(&destination_path))
+        .await? as u32;
+    library.close().await;
+    Ok(ExportSummary { hand_count })
+}
+
 /// Asks the running import to stop; its uncommitted batch is discarded.
 #[flutter_rust_bridge::frb(sync)]
 pub fn cancel_import() {
@@ -301,6 +654,82 @@ pub fn init_app() {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn analytics_returns_core_stats_and_a_bounded_result_graph() {
+        let dir = tempfile::tempdir().unwrap();
+        let database_path = dir.path().join("library.sqlite3");
+        let library = Library::open(&database_path).await.unwrap();
+        let parsed =
+            openriver_parser::parse(include_bytes!("../../../../fixtures/hands/normal_fold.txt"))
+                .unwrap();
+        library.import(&parsed, "analytics").await.unwrap();
+        library.close().await;
+
+        let report = player_analytics(
+            database_path.to_string_lossy().into_owned(),
+            PlayerAnalyticsRequest {
+                room: String::new(),
+                player: String::new(),
+                currency: String::new(),
+                date_from: None,
+                date_to: None,
+                min_big_blind: None,
+                max_big_blind: None,
+            },
+        )
+        .await
+        .unwrap();
+        assert_eq!(report.total_players, 2);
+        assert_eq!(report.players.len(), 2);
+        let selected = report.selected.unwrap();
+        assert_eq!(selected.name, "Ada");
+        assert_eq!(selected.hands, 1);
+        assert_eq!(selected.results[0].net, 2);
+        assert_eq!(selected.bb_per_100, Some(100.0));
+        let vpip = selected
+            .stats
+            .iter()
+            .find(|stat| stat.key == "vpip")
+            .unwrap();
+        assert_eq!(
+            (vpip.successes, vpip.eligible, vpip.rate),
+            (1, 1, Some(1.0))
+        );
+        let pfr = selected
+            .stats
+            .iter()
+            .find(|stat| stat.key == "pfr")
+            .unwrap();
+        assert_eq!((pfr.successes, pfr.eligible, pfr.rate), (0, 1, Some(0.0)));
+        assert_eq!(report.graph_currency.as_deref(), Some("USD"));
+        assert_eq!(report.points.len(), 1);
+        assert_eq!(report.points[0].cumulative_net, 2);
+        assert_eq!(report.points[0].cumulative_big_blinds, 1.0);
+    }
+
+    #[test]
+    fn graph_sampling_retains_both_endpoints() {
+        let points = (1..=600)
+            .map(|sequence| ResultPoint {
+                sequence,
+                played_at: String::new(),
+                external_hand_id: sequence.to_string(),
+                net: 0,
+                cumulative_net: 0,
+                cumulative_big_blinds: 0.0,
+            })
+            .collect();
+        let sampled = sampled_points(points);
+        assert_eq!(sampled.len(), 500);
+        assert_eq!(sampled.first().unwrap().sequence, 1);
+        assert_eq!(sampled.last().unwrap().sequence, 600);
+        assert!(sampled
+            .windows(2)
+            .all(|pair| pair[0].sequence < pair[1].sequence));
+    }
+
     #[test]
     fn replay_json_keeps_rust_snapshot_shape() {
         let parsed =

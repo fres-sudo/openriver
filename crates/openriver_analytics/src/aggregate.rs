@@ -158,7 +158,7 @@ pub struct HandFilter {
 }
 
 impl HandFilter {
-    fn hand_matches(&self, hand: &Hand, analysis: &HandAnalysis) -> bool {
+    pub fn hand_matches(&self, hand: &Hand, analysis: &HandAnalysis) -> bool {
         self.from
             .as_ref()
             .is_none_or(|from| analysis.played_at >= *from)
@@ -186,7 +186,7 @@ impl HandFilter {
     }
 
     /// A position filter excludes players whose position is unknown.
-    fn player_matches(&self, player: &PlayerSummary) -> bool {
+    pub fn player_matches(&self, player: &PlayerSummary) -> bool {
         let position_ok = self.positions.as_ref().is_none_or(|set| {
             player
                 .position
@@ -228,8 +228,17 @@ impl StatsEngine {
     /// Analyze and record one hand. Invalid hands are an error and change nothing.
     pub fn add_hand(&mut self, hand: &Hand) -> Result<(), AnalysisError> {
         let analysis = analyze(hand)?;
+        self.add_analysis(hand, &analysis)
+    }
+
+    /// Record an analysis previously produced from this same hand.
+    pub fn add_analysis(
+        &mut self,
+        hand: &Hand,
+        analysis: &HandAnalysis,
+    ) -> Result<(), AnalysisError> {
         self.hands_seen += 1;
-        if !self.filter.hand_matches(hand, &analysis) {
+        if !self.filter.hand_matches(hand, analysis) {
             return Ok(());
         }
         self.hands_counted += 1;
@@ -244,7 +253,7 @@ impl StatsEngine {
             self.players
                 .entry(key)
                 .or_default()
-                .observe(&analysis, player);
+                .observe(analysis, player);
         }
         Ok(())
     }
