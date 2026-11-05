@@ -1,0 +1,54 @@
+name: Beta feedback
+description: Report an external beta workflow result without sharing private poker data
+title: "[Beta]: "
+labels: [beta]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not attach hand histories, player names, database backups, private paths, credentials, or API keys. Use only sanitized diagnostic codes and reproduction steps.
+  - type: input
+    id: version
+    attributes:
+      label: App version and build
+      description: For example, 0.1.0-beta.1+2.
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: macOS version
+      description: For example, macOS 15.7 on Apple Silicon.
+    validations:
+      required: true
+  - type: dropdown
+    id: result
+    attributes:
+      label: Overall result
+      options:
+        - Completed import, analyze, and replay independently
+        - Completed only with developer assistance
+        - Blocked before completing the workflow
+    validations:
+      required: true
+  - type: checkboxes
+    id: completed
+    attributes:
+      label: Steps completed
+      options:
+        - label: Imported a permitted hand history and understood the report
+        - label: Reviewed filtered statistics and the cumulative graph
+        - label: Opened and controlled a hand replay
+        - label: Exported a library backup to a new file
+  - type: textarea
+    id: details
+    attributes:
+      label: What happened?
+      description: Describe the result and any confusing behavior. List the step where you stopped or needed help.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Sanitized reproduction steps
+      description: If something failed, provide numbered steps and stable diagnostic codes. Remove all names, hand IDs, paths, and other private data.
