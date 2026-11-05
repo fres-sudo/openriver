@@ -93,6 +93,20 @@ void main() {
     expect(analytics.selected?.results.single.net, 2);
     expect(analytics.selected?.bbPer100, 100);
     expect(analytics.points.single.cumulativeBigBlinds, 1);
+    final backup = path.join(directory.path, 'backup.sqlite3');
+    final exported = await core.exportLibrary(database, backup);
+    expect(exported.handCount, 1);
+    expect(await core.storedHandCount(backup), 1);
+    await expectLater(
+      core.exportLibrary(database, backup),
+      throwsA(
+        isA<CoreException>().having(
+          (e) => e.failure,
+          'failure',
+          CoreFailure.exportDestinationExists,
+        ),
+      ),
+    );
 
     await tester.pumpWidget(
       OpenRiverApp(core: core, databasePath: () async => database),
