@@ -66,8 +66,16 @@ class _ReadyContent extends StatelessWidget {
         SizedBox(height: spacing.sm),
         Text(strings.storedHands(storedCount), style: theme.textTheme.p),
         if (storedCount == 0 && !importing) ...[
-          SizedBox(height: spacing.lg),
+          SizedBox(height: spacing.xl),
+          Text(strings.libraryEmptyTitle, style: theme.textTheme.h4),
+          SizedBox(height: spacing.sm),
           Text(strings.libraryEmptyDescription, style: theme.textTheme.muted),
+          SizedBox(height: spacing.lg),
+          _OnboardingStep(number: '1', text: strings.onboardingExport),
+          _OnboardingStep(number: '2', text: strings.onboardingImport),
+          _OnboardingStep(number: '3', text: strings.onboardingReview),
+          SizedBox(height: spacing.md),
+          Text(strings.onboardingFormats, style: theme.textTheme.small),
           SizedBox(height: spacing.xl),
           RiverButton(
             label: strings.importAction,
@@ -122,6 +130,31 @@ class _ReadyContent extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+class _OnboardingStep extends StatelessWidget {
+  const _OnboardingStep({required this.number, required this.text});
+
+  final String number;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.app.theme;
+    return Padding(
+      padding: EdgeInsets.only(bottom: theme.spacing.sm),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 28,
+            child: Text('$number.', style: theme.textTheme.large),
+          ),
+          Expanded(child: Text(text, style: theme.textTheme.p)),
+        ],
+      ),
     );
   }
 }
