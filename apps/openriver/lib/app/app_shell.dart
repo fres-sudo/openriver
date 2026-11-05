@@ -40,6 +40,10 @@ class AppShell extends StatelessWidget {
             ),
             RiverDestination(label: strings.navHands, icon: LucideIcons.list),
             RiverDestination(
+              label: strings.navStatistics,
+              icon: LucideIcons.chartLine,
+            ),
+            RiverDestination(
               label: strings.navSettings,
               icon: LucideIcons.settings,
             ),

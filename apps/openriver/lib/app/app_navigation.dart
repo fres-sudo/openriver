@@ -4,17 +4,19 @@ import 'package:go_router/go_router.dart';
 import '../features/hands/hands_page.dart';
 import '../features/library/library_page.dart';
 import '../features/settings/settings_page.dart';
+import '../features/statistics/statistics_page.dart';
 import 'app_shell.dart';
 
 /// Route paths. Navigate with these constants, never string literals.
 abstract final class AppRoutes {
   static const library = '/library';
   static const hands = '/hands';
+  static const statistics = '/statistics';
   static const settings = '/settings';
 }
 
 /// Top-level destinations, in shell order. Each is one router branch.
-enum AppDestination { library, hands, settings }
+enum AppDestination { library, hands, statistics, settings }
 
 /// The router and the per-destination state it needs.
 ///
@@ -38,6 +40,11 @@ final class AppNavigation {
               const LibraryPage(),
             ),
             _branch(AppDestination.hands, AppRoutes.hands, const HandsPage()),
+            _branch(
+              AppDestination.statistics,
+              AppRoutes.statistics,
+              const StatisticsPage(),
+            ),
             _branch(
               AppDestination.settings,
               AppRoutes.settings,
