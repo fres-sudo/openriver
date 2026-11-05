@@ -1,5 +1,13 @@
 # Verification
 
+## Milestone 2 beta preparation, 2026-11-05
+
+`dart run melos run check` passed on the working tree with the pre-existing uncommitted Italian parser changes included: formatting, Flutter analysis and tests, Rust formatting, Clippy, and workspace tests. `bash -n scripts/package_macos_beta.sh` passed, and both the beta workflow and issue form parsed as YAML.
+
+The packaging script and manually dispatched GitHub Actions workflow were not run end to end because this Mac has Apple Development and Apple Distribution identities but no Developer ID Application identity. No notarization credential was configured or tested, no signed/notarized artifact was produced, and no Gatekeeper result is claimed. The public PokerStars history-export and third-party-tool pages were rechecked and linked in `room-policy-review.md`; no representative real-world sample or redistribution permission was obtained.
+
+`beta-testing.md` and the beta feedback issue form now define the independent tester workflow and evidence rules. No external tester session has occurred, so the 10-person exit criterion remains open. Public distribution also remains blocked on the project owner's source-license, final application-identifier, and application-icon decisions.
+
 ## Milestone 2 statistics and export, 2026-11-05
 
 `dart run melos run check` passed on the working tree with the pre-existing uncommitted Italian parser changes included: formatting, analysis in all three Dart packages, 136 app tests, 489 UI-kit tests, Rust Clippy, and Rust workspace tests (58 analytics, 3 bridge, 5 domain, 26 parser, 11 storage; ignored exhaustive/performance tests excluded). New tests cover filtered analytics batches, exact known stats/results, bounded graph sampling, standalone backups, overwrite refusal, dashboard filters and graph modes, export without path disclosure, navigation, and enlarged-text layouts.
