@@ -128,14 +128,27 @@ class ImportReportView extends StatelessWidget {
               for (final diagnostic in report.diagnostics)
                 Padding(
                   padding: EdgeInsets.only(bottom: spacing.xs),
-                  child: Text(
-                    strings.rejectedHand(
-                      diagnostic.handId ?? strings.unknownHand,
-                      diagnostic.startLine,
-                      diagnostic.endLine,
-                      diagnostic.code,
-                    ),
-                    style: theme.textTheme.muted,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        strings.rejectedHand(
+                          diagnostic.handId ?? strings.unknownHand,
+                          diagnostic.startLine,
+                          diagnostic.endLine,
+                          diagnostic.code,
+                        ),
+                        style: theme.textTheme.muted,
+                      ),
+                      Text(switch (diagnostic.code) {
+                        'UnsupportedFormat' => strings.diagnosticUnsupported,
+                        'IncompleteHand' => strings.diagnosticIncomplete,
+                        'MalformedField' => strings.diagnosticMalformed,
+                        'InvalidHand' => strings.diagnosticInvalid,
+                        'DuplicateHandId' => strings.diagnosticDuplicate,
+                        _ => strings.diagnosticInvalid,
+                      }, style: theme.textTheme.small),
+                    ],
                   ),
                 ),
             ],
