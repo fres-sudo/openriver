@@ -105,6 +105,25 @@ class _Core implements OpenRiverCore {
     String filePath, {
     void Function(ImportProgress progress)? onProgress,
   }) => throw UnimplementedError();
+
+  @override
+  Future<PlayerAnalyticsReport> playerAnalytics(
+    String databasePath,
+    PlayerAnalyticsQuery query,
+  ) async => const PlayerAnalyticsReport(
+    players: [],
+    totalPlayers: 0,
+    selected: null,
+    graphCurrency: null,
+    graphCurrencyScale: 2,
+    points: [],
+  );
+
+  @override
+  Future<LibraryExportResult> exportLibrary(
+    String databasePath,
+    String destinationPath,
+  ) => throw UnimplementedError();
 }
 
 void main() {

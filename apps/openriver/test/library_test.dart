@@ -12,12 +12,22 @@ import 'package:openriver_api/openriver_api.dart';
 import 'package:openriver_ui/openriver_ui.dart';
 
 class FakeCore implements OpenRiverCore {
-  FakeCore(this.open, {this.import, this.progress = const []});
+  FakeCore(
+    this.open, {
+    this.import,
+    this.progress = const [],
+    this.analytics,
+    this.export,
+  });
   final Future<LibraryInfo> Function() open;
   final Future<HandImportReport> Function()? import;
+  final Future<PlayerAnalyticsReport> Function(PlayerAnalyticsQuery query)?
+  analytics;
+  final Future<LibraryExportResult> Function()? export;
   final List<ImportProgress> progress;
   var cancelRequests = 0;
   final importedPaths = <String>[];
+  final exportedPaths = <String>[];
   @override
   void cancelImport() => cancelRequests++;
   @override
@@ -52,6 +62,30 @@ class FakeCore implements OpenRiverCore {
     progress.forEach(onProgress ?? (_) {});
     return import?.call() ?? _report();
   }
+
+  @override
+  Future<PlayerAnalyticsReport> playerAnalytics(
+    String databasePath,
+    PlayerAnalyticsQuery query,
+  ) async =>
+      analytics?.call(query) ??
+      const PlayerAnalyticsReport(
+        players: [],
+        totalPlayers: 0,
+        selected: null,
+        graphCurrency: null,
+        graphCurrencyScale: 2,
+        points: [],
+      );
+
+  @override
+  Future<LibraryExportResult> exportLibrary(
+    String databasePath,
+    String destinationPath,
+  ) async {
+    exportedPaths.add(destinationPath);
+    return export?.call() ?? const LibraryExportResult(handCount: 1);
+  }
 }
 
 HandImportReport _report({
@@ -68,6 +102,89 @@ HandImportReport _report({
   diagnostics: diagnostics,
 );
 
+StatisticValue _stat(String key, String label, int successes, int eligible) =>
+    StatisticValue(
+      key: key,
+      label: label,
+      description: 'Definition of $label',
+      successes: successes,
+      eligible: eligible,
+      rate: eligible == 0 ? null : successes / eligible,
+      intervalLow: null,
+      intervalHigh: null,
+      minimumMeaningfulSample: 100,
+    );
+
+PlayerAnalyticsReport _analyticsReport() {
+  final stats = [
+    _stat('vpip', 'VPIP', 1, 4),
+    _stat('pfr', 'PFR', 1, 4),
+    _stat('three_bet', '3-bet', 0, 2),
+    _stat('fold_to_three_bet', 'Fold to 3-bet', 0, 0),
+    _stat('steal', 'Steal attempt', 1, 2),
+    _stat('fold_bb_to_steal', 'Big blind fold to steal', 0, 1),
+  ];
+  const selected = PlayerStatistics(
+    room: 'stars',
+    name: 'Ada',
+    hands: 12,
+    handsCounted: 20,
+    netBigBlinds: 3,
+    bbPer100: 2.5,
+    aggressionFactor: 1.5,
+    aggressionFrequency: 0.4,
+    results: [
+      CurrencyResults(
+        currency: 'USD',
+        currencyScale: 2,
+        net: 150,
+        netAtShowdown: 100,
+        netWithoutShowdown: 50,
+      ),
+    ],
+    stats: [],
+  );
+  return PlayerAnalyticsReport(
+    players: const [
+      AnalyticsPlayer(room: 'stars', name: 'Ada', hands: 12),
+      AnalyticsPlayer(room: 'stars', name: 'Bo', hands: 8),
+    ],
+    totalPlayers: 2,
+    selected: PlayerStatistics(
+      room: selected.room,
+      name: selected.name,
+      hands: selected.hands,
+      handsCounted: selected.handsCounted,
+      netBigBlinds: selected.netBigBlinds,
+      bbPer100: selected.bbPer100,
+      aggressionFactor: selected.aggressionFactor,
+      aggressionFrequency: selected.aggressionFrequency,
+      results: selected.results,
+      stats: stats,
+    ),
+    graphCurrency: 'USD',
+    graphCurrencyScale: 2,
+    points: const [
+      ResultPoint(
+        sequence: 1,
+        playedAt: '2026-10-23T12:01:00Z',
+        externalHandId: '1001',
+        net: 50,
+        cumulativeNet: 50,
+        cumulativeBigBlinds: 1,
+      ),
+      ResultPoint(
+        sequence: 2,
+        playedAt: '2026-10-24T12:01:00Z',
+        externalHandId: '1002',
+        net: 100,
+        cumulativeNet: 150,
+        cumulativeBigBlinds: 3,
+      ),
+    ],
+  );
+}
+
 const info = LibraryInfo(coreVersion: '0.1.0', schemaVersion: 3);
 const privatePath = '/private/player/history.txt';
 
@@ -76,6 +193,7 @@ Future<void> _pumpApp(
   OpenRiverCore core, {
   Size size = const Size(1280, 800),
   Future<String?> Function()? choose,
+  Future<String?> Function()? chooseExport,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
@@ -85,6 +203,8 @@ Future<void> _pumpApp(
       core: core,
       databasePath: () async => 'test.sqlite3',
       chooseHandHistory: choose ?? () async => privatePath,
+      chooseExportLocation:
+          chooseExport ?? () async => '/private/player/backup.sqlite3',
     ),
   );
   await tester.pumpAndSettle();
@@ -340,6 +460,58 @@ void main() {
     });
   });
 
+  group('statistics and export', () {
+    testWidgets('shows core stats, results, graph modes, and filters', (
+      tester,
+    ) async {
+      final queries = <PlayerAnalyticsQuery>[];
+      final core = FakeCore(
+        () async => info,
+        analytics: (query) async {
+          queries.add(query);
+          return _analyticsReport();
+        },
+      );
+      await _pumpApp(tester, core, size: const Size(1440, 1000));
+
+      await tester.tap(find.text('Statistics').first);
+      await tester.pumpAndSettle();
+      expect(find.text('Ada · stars'), findsWidgets);
+      expect(find.text('12'), findsOneWidget);
+      expect(find.text('+2.50'), findsOneWidget);
+      expect(find.text(r'$1.50'), findsWidgets);
+      expect(find.text('25.0%'), findsWidgets);
+      expect(find.text('1 / 4 opportunities'), findsWidgets);
+      expect(find.text('—'), findsWidgets);
+      expect(find.text(r'Final result: $1.50'), findsOneWidget);
+
+      await tester.tap(find.text('Show big blinds'));
+      await tester.pump();
+      expect(find.text('Final result: +3.00 BB'), findsOneWidget);
+
+      await tester.tap(find.text('Filters').first);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(ShadInput).first, 'usd');
+      await tester.tap(find.text('Apply filters'));
+      await tester.pumpAndSettle();
+      expect(queries.last.currency, 'USD');
+    });
+
+    testWidgets('exports a backup without exposing its path', (tester) async {
+      final core = FakeCore(() async => info);
+      await _pumpApp(tester, core);
+      await tester.tap(find.text('Settings').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Export library backup'));
+      await tester.pump();
+
+      expect(core.exportedPaths, ['/private/player/backup.sqlite3']);
+      expect(find.text('Backup exported with 1 hand.'), findsOneWidget);
+      expect(find.textContaining('/private/player'), findsNothing);
+      await tester.pumpAndSettle(const Duration(seconds: 10));
+    });
+  });
+
   group('navigation', () {
     testWidgets('shows every destination', (tester) async {
       await _pumpApp(tester, FakeCore(() async => info));
@@ -437,7 +609,7 @@ void main() {
   });
 
   for (final size in const [Size(375, 812), Size(812, 375), Size(1440, 900)]) {
-    for (final destination in ['Library', 'Hands', 'Settings']) {
+    for (final destination in ['Library', 'Hands', 'Statistics', 'Settings']) {
       testWidgets('$destination fits $size with enlarged text', (tester) async {
         tester.platformDispatcher.textScaleFactorTestValue = 2;
         addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
