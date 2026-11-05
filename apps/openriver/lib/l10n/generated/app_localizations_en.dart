@@ -18,6 +18,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navHands => 'Hands';
 
   @override
+  String get navStatistics => 'Statistics';
+
+  @override
   String get navSettings => 'Settings';
 
   @override
@@ -59,6 +62,22 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get libraryEmptyDescription =>
       'Import a hand history file exported after your session to start your library.';
+
+  @override
+  String get onboardingExport =>
+      'In your poker room, request or save your own hand history after a session.';
+
+  @override
+  String get onboardingImport =>
+      'Choose the text file here. Valid hands are stored locally; rejected hands include a reason.';
+
+  @override
+  String get onboardingReview =>
+      'Open Statistics for results and tendencies, or Hands to search and replay each hand.';
+
+  @override
+  String get onboardingFormats =>
+      'Supported input: PokerStars-style NLHE cash histories in English (USD) or Italian (EUR). Tournament hands are not imported.';
 
   @override
   String lastImport(int imported, int duplicates, int rejected) {
@@ -104,6 +123,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String rejectedHand(String handId, int startLine, int endLine, String code) {
     return 'Hand $handId, lines $startLine–$endLine: $code';
   }
+
+  @override
+  String get diagnosticUnsupported =>
+      'This hand uses an unsupported game or format.';
+
+  @override
+  String get diagnosticIncomplete =>
+      'The hand is incomplete, so it was not stored.';
+
+  @override
+  String get diagnosticMalformed =>
+      'A required field could not be read with confidence.';
+
+  @override
+  String get diagnosticInvalid =>
+      'The hand’s actions, cards, or payouts are inconsistent.';
+
+  @override
+  String get diagnosticDuplicate =>
+      'The same hand ID appears more than once in this file.';
 
   @override
   String get unknownHand => 'unknown';
@@ -293,6 +332,108 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get statisticsTitle => 'Statistics';
+
+  @override
+  String get statisticsDescription =>
+      'Results and tendencies calculated from your imported hands.';
+
+  @override
+  String get statisticsLoading => 'Calculating statistics…';
+
+  @override
+  String get statisticsLoadFailedTitle => 'Statistics could not be calculated';
+
+  @override
+  String get statisticsLoadFailed =>
+      'Your hands are still stored. Try calculating the report again.';
+
+  @override
+  String get statisticsEmpty =>
+      'Import hands to see results, a winnings graph, and core statistics.';
+
+  @override
+  String get statisticsRefresh => 'Refresh';
+
+  @override
+  String get statisticsPlayer => 'Player and room';
+
+  @override
+  String get statisticsHands => 'Hands';
+
+  @override
+  String get statisticsBb100 => 'BB / 100 hands';
+
+  @override
+  String get statisticsAggressionFactor => 'Aggression factor';
+
+  @override
+  String get statisticsNoEvidence => 'No evidence';
+
+  @override
+  String statisticsNetResult(String currency) {
+    return 'Net result · $currency';
+  }
+
+  @override
+  String get statisticsAtShowdown => 'At showdown';
+
+  @override
+  String get statisticsWithoutShowdown => 'Without showdown';
+
+  @override
+  String statisticsSample(int successes, int eligible) {
+    return '$successes / $eligible opportunities';
+  }
+
+  @override
+  String get statisticsResultsGraph => 'Cumulative results';
+
+  @override
+  String get statisticsGraphDescription =>
+      'Chronological results for the selected player and filters. Large reports are sampled to 500 points, including the final result.';
+
+  @override
+  String statisticsShowCurrency(String currency) {
+    return 'Show $currency';
+  }
+
+  @override
+  String get statisticsShowBigBlinds => 'Show big blinds';
+
+  @override
+  String get statisticsNoGraph => 'No result points match these filters.';
+
+  @override
+  String statisticsCurrencyGraphLabel(String currency) {
+    return 'Cumulative net result in $currency';
+  }
+
+  @override
+  String get statisticsBigBlindsGraphLabel =>
+      'Cumulative net result in big blinds';
+
+  @override
+  String statisticsFinalCurrency(String amount) {
+    return 'Final result: $amount';
+  }
+
+  @override
+  String statisticsFinalBigBlinds(String amount) {
+    return 'Final result: $amount BB';
+  }
+
+  @override
+  String get statisticsAllHeading => 'All core statistics';
+
+  @override
+  String get statisticsSampleExplanation =>
+      'Rates show successes over eligible opportunities. A dash means no evidence, not zero percent.';
+
+  @override
+  String get statisticsSmallSample => 'Small sample';
+
+  @override
   String get settingsTitle => 'Settings';
 
   @override
@@ -314,6 +455,43 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get privacyNote =>
       'Your hands stay on this device. OpenRiver needs no account or network connection.';
+
+  @override
+  String get exportHeading => 'Data export';
+
+  @override
+  String get exportDescription =>
+      'Save a consistent SQLite backup of your library, including hands, import reports, and provenance. Keep the file somewhere safe.';
+
+  @override
+  String get exportAction => 'Export library backup';
+
+  @override
+  String exportSuccess(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count hands',
+      one: '1 hand',
+    );
+    return 'Backup exported with $_temp0.';
+  }
+
+  @override
+  String get exportDestinationExists =>
+      'That file already exists. Choose a new filename so nothing is overwritten.';
+
+  @override
+  String get exportInvalidPath =>
+      'The backup could not be saved there. Choose a different location.';
+
+  @override
+  String get exportFailed =>
+      'The backup could not be completed. Check available storage and try again.';
+
+  @override
+  String get exportChooserFailed =>
+      'The save dialog could not open. Please try again.';
 
   @override
   String get replayTitle => 'Hand replay';
