@@ -243,3 +243,317 @@ class _StatisticsContentState extends State<_StatisticsContent> {
     );
   }
 }
+
+class _PlayerPicker extends StatelessWidget {
+  const _PlayerPicker({
+    required this.players,
+    required this.selected,
+    required this.playerKey,
+    required this.onSelected,
+  });
+
+  final List<AnalyticsPlayer> players;
+  final PlayerStatistics selected;
+  final String Function(String room, String name) playerKey;
+  final void Function(String room, String name) onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = context.app.localizations;
+    final selectedKey = playerKey(selected.room, selected.name);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          strings.statisticsPlayer,
+          style: context.app.theme.textTheme.small,
+        ),
+        SizedBox(height: context.app.theme.spacing.xs),
+        SizedBox(
+          width: 360,
+          child: ShadSelect<String>(
+            key: ValueKey(selectedKey),
+            initialValue: selectedKey,
+            options: [
+              for (final player in players)
+                ShadOption(
+                  value: playerKey(player.room, player.name),
+                  child: Text('${player.name} · ${player.room}'),
+                ),
+            ],
+            selectedOptionBuilder: (context, value) {
+              for (final player in players) {
+                if (playerKey(player.room, player.name) == value) {
+                  return Text('${player.name} · ${player.room}');
+                }
+              }
+              return Text(selected.name);
+            },
+            onChanged: (value) {
+              for (final player in players) {
+                if (playerKey(player.room, player.name) == value) {
+                  onSelected(player.room, player.name);
+                  return;
+                }
+              }
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SummaryCards extends StatelessWidget {
+  const _SummaryCards({required this.selected});
+
+  final PlayerStatistics selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = context.app.localizations;
+    final core = [
+      for (final key in [
+        'vpip',
+        'pfr',
+        'three_bet',
+        'fold_to_three_bet',
+        'steal',
+        'fold_bb_to_steal',
+      ])
+        selected.stats.firstWhere((stat) => stat.key == key),
+    ];
+    return Wrap(
+      spacing: context.app.theme.spacing.lg,
+      runSpacing: context.app.theme.spacing.lg,
+      children: [
+        _MetricCard(
+          label: strings.statisticsHands,
+          value: NumberFormat.decimalPattern().format(selected.hands),
+        ),
+        _MetricCard(
+          label: strings.statisticsBb100,
+          value: selected.bbPer100 == null
+              ? strings.statisticsNoEvidence
+              : NumberFormat('+0.00;-0.00').format(selected.bbPer100),
+        ),
+        _MetricCard(
+          label: strings.statisticsAggressionFactor,
+          value: selected.aggressionFactor == null
+              ? strings.statisticsNoEvidence
+              : NumberFormat('0.00').format(selected.aggressionFactor),
+        ),
+        for (final stat in core)
+          _MetricCard(
+            label: stat.label,
+            value: _rate(stat),
+            detail: strings.statisticsSample(stat.successes, stat.eligible),
+          ),
+        for (final result in selected.results)
+          _MetricCard(
+            label: strings.statisticsNetResult(result.currency),
+            value: _money(result.net, result.currency, result.currencyScale),
+            detail:
+                '${strings.statisticsAtShowdown}: ${_money(result.netAtShowdown, result.currency, result.currencyScale)} · '
+                '${strings.statisticsWithoutShowdown}: ${_money(result.netWithoutShowdown, result.currency, result.currencyScale)}',
+          ),
+      ],
+    );
+  }
+}
+
+class _MetricCard extends StatelessWidget {
+  const _MetricCard({required this.label, required this.value, this.detail});
+
+  final String label;
+  final String value;
+  final String? detail;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = context.app.theme;
+    return ShadCard(
+      width: 260,
+      content: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: theme.textTheme.muted),
+          SizedBox(height: theme.spacing.sm),
+          Text(value, style: theme.textTheme.h3),
+          if (detail != null) ...[
+            SizedBox(height: theme.spacing.xs),
+            Text(detail!, style: theme.textTheme.small),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _GraphCard extends StatelessWidget {
+  const _GraphCard({
+    required this.report,
+    required this.bigBlinds,
+    required this.onChanged,
+  });
+
+  final PlayerAnalyticsReport report;
+  final bool bigBlinds;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = context.app.localizations;
+    final theme = context.app.theme;
+    final currency = report.graphCurrency ?? '';
+    final last = report.points.lastOrNull;
+    return ShadCard(
+      width: double.infinity,
+      title: Text(strings.statisticsResultsGraph),
+      description: Text(strings.statisticsGraphDescription),
+      content: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Wrap(
+            spacing: theme.spacing.sm,
+            runSpacing: theme.spacing.sm,
+            children: [
+              RiverButton(
+                label: strings.statisticsShowCurrency(currency),
+                variant: bigBlinds
+                    ? RiverButtonVariant.outline
+                    : RiverButtonVariant.primary,
+                onPressed: () => onChanged(false),
+              ),
+              RiverButton(
+                label: strings.statisticsShowBigBlinds,
+                variant: bigBlinds
+                    ? RiverButtonVariant.primary
+                    : RiverButtonVariant.outline,
+                onPressed: () => onChanged(true),
+              ),
+            ],
+          ),
+          SizedBox(height: theme.spacing.lg),
+          if (report.points.isEmpty)
+            Text(strings.statisticsNoGraph, style: theme.textTheme.muted)
+          else ...[
+            ResultsGraph(
+              points: report.points,
+              useBigBlinds: bigBlinds,
+              semanticsLabel: bigBlinds
+                  ? strings.statisticsBigBlindsGraphLabel
+                  : strings.statisticsCurrencyGraphLabel(currency),
+            ),
+            SizedBox(height: theme.spacing.sm),
+            Text(
+              bigBlinds
+                  ? strings.statisticsFinalBigBlinds(
+                      NumberFormat(
+                        '+0.00;-0.00',
+                      ).format(last!.cumulativeBigBlinds),
+                    )
+                  : strings.statisticsFinalCurrency(
+                      _money(
+                        last!.cumulativeNet,
+                        currency,
+                        report.graphCurrencyScale,
+                      ),
+                    ),
+              style: theme.textTheme.p,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _StatisticsTable extends StatelessWidget {
+  const _StatisticsTable({required this.stats});
+
+  final List<StatisticValue> stats;
+
+  @override
+  Widget build(BuildContext context) {
+    final strings = context.app.localizations;
+    final theme = context.app.theme;
+    return ShadCard(
+      width: double.infinity,
+      title: Text(strings.statisticsAllHeading),
+      description: Text(strings.statisticsSampleExplanation),
+      content: Column(
+        children: [
+          for (final stat in stats)
+            Container(
+              padding: EdgeInsets.symmetric(vertical: theme.spacing.md),
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: theme.colors.border)),
+              ),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final description = Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(stat.label, style: theme.textTheme.large),
+                      SizedBox(height: theme.spacing.xs),
+                      Text(stat.description, style: theme.textTheme.muted),
+                    ],
+                  );
+                  final value = Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(_rate(stat), style: theme.textTheme.h4),
+                      Text(
+                        strings.statisticsSample(stat.successes, stat.eligible),
+                        style: theme.textTheme.muted,
+                      ),
+                      if (stat.eligible < stat.minimumMeaningfulSample)
+                        Text(
+                          strings.statisticsSmallSample,
+                          style: theme.textTheme.small,
+                        ),
+                    ],
+                  );
+                  if (constraints.maxWidth < 600) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        description,
+                        SizedBox(height: theme.spacing.sm),
+                        value,
+                      ],
+                    );
+                  }
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: description),
+                      SizedBox(width: theme.spacing.xl),
+                      value,
+                    ],
+                  );
+                },
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+String _rate(StatisticValue stat) =>
+    stat.rate == null ? '—' : NumberFormat('0.0%').format(stat.rate);
+
+String _money(int units, String currency, int scale) {
+  final symbol = switch (currency) {
+    'USD' => r'$',
+    'EUR' => '€',
+    _ => '$currency ',
+  };
+  final value = units / math.pow(10, scale);
+  return NumberFormat.currency(
+    symbol: symbol,
+    decimalDigits: scale,
+  ).format(value);
+}
