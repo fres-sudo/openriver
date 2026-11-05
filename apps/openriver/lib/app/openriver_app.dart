@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:openriver_api/openriver_api.dart';
 import 'package:openriver_ui/openriver_ui.dart';
 
+import '../features/export/export_flow.dart' as export_flow;
 import '../features/import/import_flow.dart';
 import '../features/library/library_cubit.dart';
 import '../l10n/generated/app_localizations.dart';
@@ -16,11 +17,13 @@ class OpenRiverApp extends StatefulWidget {
     required this.core,
     required this.databasePath,
     this.chooseHandHistory = chooseHandHistoryFile,
+    this.chooseExportLocation = export_flow.chooseExportLocation,
   });
 
   final OpenRiverCore core;
   final Future<String> Function() databasePath;
   final HandHistoryChooser chooseHandHistory;
+  final Future<String?> Function() chooseExportLocation;
 
   @override
   State<OpenRiverApp> createState() => _OpenRiverAppState();
@@ -41,24 +44,29 @@ class _OpenRiverAppState extends State<OpenRiverApp> {
   }
 
   @override
-  Widget build(BuildContext context) => RepositoryProvider.value(
-    value: widget.chooseHandHistory,
-    child: BlocProvider.value(
-      value: _library,
-      child: ShadApp.router(
-        routerConfig: _navigation.router,
-        onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
-        color: RiverThemes.light.colorScheme.primary,
-        debugShowCheckedModeBanner: false,
-        theme: RiverThemes.light,
-        darkTheme: RiverThemes.dark,
-        localizationsDelegates: const [
-          AppLocalizations.delegate,
-          RiverLocalizations.delegate,
-        ],
-        supportedLocales: AppLocalizations.supportedLocales,
-        builder: (context, child) => RiverLayoutScope(child: child!),
-      ),
-    ),
-  );
+  Widget build(BuildContext context) =>
+      RepositoryProvider<export_flow.ExportLocationChooser>.value(
+        value: export_flow.ExportLocationChooser(widget.chooseExportLocation),
+        child: RepositoryProvider<HandHistoryChooser>.value(
+          value: widget.chooseHandHistory,
+          child: BlocProvider.value(
+            value: _library,
+            child: ShadApp.router(
+              routerConfig: _navigation.router,
+              onGenerateTitle: (context) =>
+                  AppLocalizations.of(context).appTitle,
+              color: RiverThemes.light.colorScheme.primary,
+              debugShowCheckedModeBanner: false,
+              theme: RiverThemes.light,
+              darkTheme: RiverThemes.dark,
+              localizationsDelegates: const [
+                AppLocalizations.delegate,
+                RiverLocalizations.delegate,
+              ],
+              supportedLocales: AppLocalizations.supportedLocales,
+              builder: (context, child) => RiverLayoutScope(child: child!),
+            ),
+          ),
+        ),
+      );
 }
