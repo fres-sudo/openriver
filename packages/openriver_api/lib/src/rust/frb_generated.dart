@@ -66,7 +66,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.12.0';
 
   @override
-  int get rustContentHash => -687168475;
+  int get rustContentHash => 781605229;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -79,6 +79,11 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
 
 abstract class RustLibApi extends BaseApi {
   void crateApiLibraryCancelImport();
+
+  Future<ExportSummary> crateApiLibraryExportLibrary({
+    required String databasePath,
+    required String destinationPath,
+  });
 
   Future<String> crateApiLibraryHandReplay({
     required String databasePath,
@@ -100,6 +105,11 @@ abstract class RustLibApi extends BaseApi {
     required String databasePath,
     String? cursorPlayedAt,
     PlatformInt64? cursorId,
+  });
+
+  Future<PlayerAnalytics> crateApiLibraryPlayerAnalytics({
+    required String databasePath,
+    required PlayerAnalyticsRequest request,
   });
 
   Future<HandSearchResult> crateApiLibrarySearchHands({
@@ -141,6 +151,41 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(debugName: "cancel_import", argNames: []);
 
   @override
+  Future<ExportSummary> crateApiLibraryExportLibrary({
+    required String databasePath,
+    required String destinationPath,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(databasePath, serializer);
+          sse_encode_String(destinationPath, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 2,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_export_summary,
+          decodeErrorData: sse_decode_core_error,
+        ),
+        constMeta: kCrateApiLibraryExportLibraryConstMeta,
+        argValues: [databasePath, destinationPath],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiLibraryExportLibraryConstMeta =>
+      const TaskConstMeta(
+        debugName: "export_library",
+        argNames: ["databasePath", "destinationPath"],
+      );
+
+  @override
   Future<String> crateApiLibraryHandReplay({
     required String databasePath,
     required PlatformInt64 handId,
@@ -154,7 +199,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 2,
+            funcId: 3,
             port: port_,
           );
         },
@@ -191,7 +236,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
             pdeCallFfi(
               generalizedFrbRustBinding,
               serializer,
-              funcId: 3,
+              funcId: 4,
               port: port_,
             );
           },
@@ -223,7 +268,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 4,
+            funcId: 5,
             port: port_,
           );
         },
@@ -253,7 +298,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 5,
+            funcId: 6,
             port: port_,
           );
         },
@@ -290,7 +335,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 6,
+            funcId: 7,
             port: port_,
           );
         },
@@ -311,6 +356,41 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   );
 
   @override
+  Future<PlayerAnalytics> crateApiLibraryPlayerAnalytics({
+    required String databasePath,
+    required PlayerAnalyticsRequest request,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(databasePath, serializer);
+          sse_encode_box_autoadd_player_analytics_request(request, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 8,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_player_analytics,
+          decodeErrorData: sse_decode_core_error,
+        ),
+        constMeta: kCrateApiLibraryPlayerAnalyticsConstMeta,
+        argValues: [databasePath, request],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiLibraryPlayerAnalyticsConstMeta =>
+      const TaskConstMeta(
+        debugName: "player_analytics",
+        argNames: ["databasePath", "request"],
+      );
+
+  @override
   Future<HandSearchResult> crateApiLibrarySearchHands({
     required String databasePath,
     required HandQueryRequest request,
@@ -324,7 +404,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 7,
+            funcId: 9,
             port: port_,
           );
         },
@@ -354,7 +434,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 8,
+            funcId: 10,
             port: port_,
           );
         },
@@ -396,9 +476,28 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  AnalyticsPlayer dco_decode_analytics_player(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return AnalyticsPlayer(
+      room: dco_decode_String(arr[0]),
+      name: dco_decode_String(arr[1]),
+      hands: dco_decode_u_64(arr[2]),
+    );
+  }
+
+  @protected
   bool dco_decode_bool(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as bool;
+  }
+
+  @protected
+  double dco_decode_box_autoadd_f_64(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as double;
   }
 
   @protected
@@ -417,6 +516,20 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ImportSummary dco_decode_box_autoadd_import_summary(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_import_summary(raw);
+  }
+
+  @protected
+  PlayerAnalyticsRequest dco_decode_box_autoadd_player_analytics_request(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_player_analytics_request(raw);
+  }
+
+  @protected
+  PlayerStatistics dco_decode_box_autoadd_player_statistics(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_player_statistics(raw);
   }
 
   @protected
@@ -441,6 +554,36 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       coreVersion: dco_decode_String(arr[0]),
       schemaVersion: dco_decode_u_32(arr[1]),
     );
+  }
+
+  @protected
+  CurrencyResults dco_decode_currency_results(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 5)
+      throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
+    return CurrencyResults(
+      currency: dco_decode_String(arr[0]),
+      currencyScale: dco_decode_u_8(arr[1]),
+      net: dco_decode_i_64(arr[2]),
+      netAtShowdown: dco_decode_i_64(arr[3]),
+      netWithoutShowdown: dco_decode_i_64(arr[4]),
+    );
+  }
+
+  @protected
+  ExportSummary dco_decode_export_summary(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 1)
+      throw Exception('unexpected arr length: expect 1 but see ${arr.length}');
+    return ExportSummary(handCount: dco_decode_u_32(arr[0]));
+  }
+
+  @protected
+  double dco_decode_f_64(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as double;
   }
 
   @protected
@@ -575,6 +718,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<AnalyticsPlayer> dco_decode_list_analytics_player(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_analytics_player).toList();
+  }
+
+  @protected
+  List<CurrencyResults> dco_decode_list_currency_results(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_currency_results).toList();
+  }
+
+  @protected
   List<HandListItem> dco_decode_list_hand_list_item(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return (raw as List<dynamic>).map(dco_decode_hand_list_item).toList();
@@ -593,9 +748,27 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<ResultPoint> dco_decode_list_result_point(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_result_point).toList();
+  }
+
+  @protected
+  List<StatisticValue> dco_decode_list_statistic_value(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_statistic_value).toList();
+  }
+
+  @protected
   String? dco_decode_opt_String(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw == null ? null : dco_decode_String(raw);
+  }
+
+  @protected
+  double? dco_decode_opt_box_autoadd_f_64(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_f_64(raw);
   }
 
   @protected
@@ -611,15 +784,115 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  PlayerStatistics? dco_decode_opt_box_autoadd_player_statistics(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_player_statistics(raw);
+  }
+
+  @protected
   int? dco_decode_opt_box_autoadd_u_8(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw == null ? null : dco_decode_box_autoadd_u_8(raw);
   }
 
   @protected
+  PlayerAnalytics dco_decode_player_analytics(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 6)
+      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
+    return PlayerAnalytics(
+      players: dco_decode_list_analytics_player(arr[0]),
+      totalPlayers: dco_decode_u_32(arr[1]),
+      selected: dco_decode_opt_box_autoadd_player_statistics(arr[2]),
+      graphCurrency: dco_decode_opt_String(arr[3]),
+      graphCurrencyScale: dco_decode_u_8(arr[4]),
+      points: dco_decode_list_result_point(arr[5]),
+    );
+  }
+
+  @protected
+  PlayerAnalyticsRequest dco_decode_player_analytics_request(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 7)
+      throw Exception('unexpected arr length: expect 7 but see ${arr.length}');
+    return PlayerAnalyticsRequest(
+      room: dco_decode_String(arr[0]),
+      player: dco_decode_String(arr[1]),
+      currency: dco_decode_String(arr[2]),
+      dateFrom: dco_decode_opt_String(arr[3]),
+      dateTo: dco_decode_opt_String(arr[4]),
+      minBigBlind: dco_decode_opt_box_autoadd_i_64(arr[5]),
+      maxBigBlind: dco_decode_opt_box_autoadd_i_64(arr[6]),
+    );
+  }
+
+  @protected
+  PlayerStatistics dco_decode_player_statistics(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 10)
+      throw Exception('unexpected arr length: expect 10 but see ${arr.length}');
+    return PlayerStatistics(
+      room: dco_decode_String(arr[0]),
+      name: dco_decode_String(arr[1]),
+      hands: dco_decode_u_64(arr[2]),
+      handsCounted: dco_decode_u_64(arr[3]),
+      netBigBlinds: dco_decode_f_64(arr[4]),
+      bbPer100: dco_decode_opt_box_autoadd_f_64(arr[5]),
+      aggressionFactor: dco_decode_opt_box_autoadd_f_64(arr[6]),
+      aggressionFrequency: dco_decode_opt_box_autoadd_f_64(arr[7]),
+      results: dco_decode_list_currency_results(arr[8]),
+      stats: dco_decode_list_statistic_value(arr[9]),
+    );
+  }
+
+  @protected
+  ResultPoint dco_decode_result_point(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 6)
+      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
+    return ResultPoint(
+      sequence: dco_decode_u_32(arr[0]),
+      playedAt: dco_decode_String(arr[1]),
+      externalHandId: dco_decode_String(arr[2]),
+      net: dco_decode_i_64(arr[3]),
+      cumulativeNet: dco_decode_i_64(arr[4]),
+      cumulativeBigBlinds: dco_decode_f_64(arr[5]),
+    );
+  }
+
+  @protected
+  StatisticValue dco_decode_statistic_value(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 9)
+      throw Exception('unexpected arr length: expect 9 but see ${arr.length}');
+    return StatisticValue(
+      key: dco_decode_String(arr[0]),
+      label: dco_decode_String(arr[1]),
+      description: dco_decode_String(arr[2]),
+      successes: dco_decode_u_64(arr[3]),
+      eligible: dco_decode_u_64(arr[4]),
+      rate: dco_decode_opt_box_autoadd_f_64(arr[5]),
+      intervalLow: dco_decode_opt_box_autoadd_f_64(arr[6]),
+      intervalHigh: dco_decode_opt_box_autoadd_f_64(arr[7]),
+      minimumMeaningfulSample: dco_decode_u_32(arr[8]),
+    );
+  }
+
+  @protected
   int dco_decode_u_32(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as int;
+  }
+
+  @protected
+  BigInt dco_decode_u_64(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dcoDecodeU64(raw);
   }
 
   @protected
@@ -657,9 +930,24 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  AnalyticsPlayer sse_decode_analytics_player(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_room = sse_decode_String(deserializer);
+    var var_name = sse_decode_String(deserializer);
+    var var_hands = sse_decode_u_64(deserializer);
+    return AnalyticsPlayer(room: var_room, name: var_name, hands: var_hands);
+  }
+
+  @protected
   bool sse_decode_bool(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return deserializer.buffer.getUint8() != 0;
+  }
+
+  @protected
+  double sse_decode_box_autoadd_f_64(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_f_64(deserializer));
   }
 
   @protected
@@ -685,6 +973,22 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  PlayerAnalyticsRequest sse_decode_box_autoadd_player_analytics_request(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_player_analytics_request(deserializer));
+  }
+
+  @protected
+  PlayerStatistics sse_decode_box_autoadd_player_statistics(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_player_statistics(deserializer));
+  }
+
+  @protected
   int sse_decode_box_autoadd_u_8(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_u_8(deserializer));
@@ -706,6 +1010,36 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       coreVersion: var_coreVersion,
       schemaVersion: var_schemaVersion,
     );
+  }
+
+  @protected
+  CurrencyResults sse_decode_currency_results(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_currency = sse_decode_String(deserializer);
+    var var_currencyScale = sse_decode_u_8(deserializer);
+    var var_net = sse_decode_i_64(deserializer);
+    var var_netAtShowdown = sse_decode_i_64(deserializer);
+    var var_netWithoutShowdown = sse_decode_i_64(deserializer);
+    return CurrencyResults(
+      currency: var_currency,
+      currencyScale: var_currencyScale,
+      net: var_net,
+      netAtShowdown: var_netAtShowdown,
+      netWithoutShowdown: var_netWithoutShowdown,
+    );
+  }
+
+  @protected
+  ExportSummary sse_decode_export_summary(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_handCount = sse_decode_u_32(deserializer);
+    return ExportSummary(handCount: var_handCount);
+  }
+
+  @protected
+  double sse_decode_f_64(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getFloat64();
   }
 
   @protected
@@ -863,6 +1197,34 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<AnalyticsPlayer> sse_decode_list_analytics_player(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <AnalyticsPlayer>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_analytics_player(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<CurrencyResults> sse_decode_list_currency_results(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <CurrencyResults>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_currency_results(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
   List<HandListItem> sse_decode_list_hand_list_item(
     SseDeserializer deserializer,
   ) {
@@ -898,11 +1260,48 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<ResultPoint> sse_decode_list_result_point(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <ResultPoint>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_result_point(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<StatisticValue> sse_decode_list_statistic_value(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <StatisticValue>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_statistic_value(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
   String? sse_decode_opt_String(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
 
     if (sse_decode_bool(deserializer)) {
       return (sse_decode_String(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  double? sse_decode_opt_box_autoadd_f_64(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_f_64(deserializer));
     } else {
       return null;
     }
@@ -933,6 +1332,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  PlayerStatistics? sse_decode_opt_box_autoadd_player_statistics(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_player_statistics(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
   int? sse_decode_opt_box_autoadd_u_8(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
 
@@ -944,9 +1356,130 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  PlayerAnalytics sse_decode_player_analytics(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_players = sse_decode_list_analytics_player(deserializer);
+    var var_totalPlayers = sse_decode_u_32(deserializer);
+    var var_selected = sse_decode_opt_box_autoadd_player_statistics(
+      deserializer,
+    );
+    var var_graphCurrency = sse_decode_opt_String(deserializer);
+    var var_graphCurrencyScale = sse_decode_u_8(deserializer);
+    var var_points = sse_decode_list_result_point(deserializer);
+    return PlayerAnalytics(
+      players: var_players,
+      totalPlayers: var_totalPlayers,
+      selected: var_selected,
+      graphCurrency: var_graphCurrency,
+      graphCurrencyScale: var_graphCurrencyScale,
+      points: var_points,
+    );
+  }
+
+  @protected
+  PlayerAnalyticsRequest sse_decode_player_analytics_request(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_room = sse_decode_String(deserializer);
+    var var_player = sse_decode_String(deserializer);
+    var var_currency = sse_decode_String(deserializer);
+    var var_dateFrom = sse_decode_opt_String(deserializer);
+    var var_dateTo = sse_decode_opt_String(deserializer);
+    var var_minBigBlind = sse_decode_opt_box_autoadd_i_64(deserializer);
+    var var_maxBigBlind = sse_decode_opt_box_autoadd_i_64(deserializer);
+    return PlayerAnalyticsRequest(
+      room: var_room,
+      player: var_player,
+      currency: var_currency,
+      dateFrom: var_dateFrom,
+      dateTo: var_dateTo,
+      minBigBlind: var_minBigBlind,
+      maxBigBlind: var_maxBigBlind,
+    );
+  }
+
+  @protected
+  PlayerStatistics sse_decode_player_statistics(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_room = sse_decode_String(deserializer);
+    var var_name = sse_decode_String(deserializer);
+    var var_hands = sse_decode_u_64(deserializer);
+    var var_handsCounted = sse_decode_u_64(deserializer);
+    var var_netBigBlinds = sse_decode_f_64(deserializer);
+    var var_bbPer100 = sse_decode_opt_box_autoadd_f_64(deserializer);
+    var var_aggressionFactor = sse_decode_opt_box_autoadd_f_64(deserializer);
+    var var_aggressionFrequency = sse_decode_opt_box_autoadd_f_64(deserializer);
+    var var_results = sse_decode_list_currency_results(deserializer);
+    var var_stats = sse_decode_list_statistic_value(deserializer);
+    return PlayerStatistics(
+      room: var_room,
+      name: var_name,
+      hands: var_hands,
+      handsCounted: var_handsCounted,
+      netBigBlinds: var_netBigBlinds,
+      bbPer100: var_bbPer100,
+      aggressionFactor: var_aggressionFactor,
+      aggressionFrequency: var_aggressionFrequency,
+      results: var_results,
+      stats: var_stats,
+    );
+  }
+
+  @protected
+  ResultPoint sse_decode_result_point(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_sequence = sse_decode_u_32(deserializer);
+    var var_playedAt = sse_decode_String(deserializer);
+    var var_externalHandId = sse_decode_String(deserializer);
+    var var_net = sse_decode_i_64(deserializer);
+    var var_cumulativeNet = sse_decode_i_64(deserializer);
+    var var_cumulativeBigBlinds = sse_decode_f_64(deserializer);
+    return ResultPoint(
+      sequence: var_sequence,
+      playedAt: var_playedAt,
+      externalHandId: var_externalHandId,
+      net: var_net,
+      cumulativeNet: var_cumulativeNet,
+      cumulativeBigBlinds: var_cumulativeBigBlinds,
+    );
+  }
+
+  @protected
+  StatisticValue sse_decode_statistic_value(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_key = sse_decode_String(deserializer);
+    var var_label = sse_decode_String(deserializer);
+    var var_description = sse_decode_String(deserializer);
+    var var_successes = sse_decode_u_64(deserializer);
+    var var_eligible = sse_decode_u_64(deserializer);
+    var var_rate = sse_decode_opt_box_autoadd_f_64(deserializer);
+    var var_intervalLow = sse_decode_opt_box_autoadd_f_64(deserializer);
+    var var_intervalHigh = sse_decode_opt_box_autoadd_f_64(deserializer);
+    var var_minimumMeaningfulSample = sse_decode_u_32(deserializer);
+    return StatisticValue(
+      key: var_key,
+      label: var_label,
+      description: var_description,
+      successes: var_successes,
+      eligible: var_eligible,
+      rate: var_rate,
+      intervalLow: var_intervalLow,
+      intervalHigh: var_intervalHigh,
+      minimumMeaningfulSample: var_minimumMeaningfulSample,
+    );
+  }
+
+  @protected
   int sse_decode_u_32(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return deserializer.buffer.getUint32();
+  }
+
+  @protected
+  BigInt sse_decode_u_64(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return deserializer.buffer.getBigUint64();
   }
 
   @protected
@@ -993,9 +1526,26 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_analytics_player(
+    AnalyticsPlayer self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.room, serializer);
+    sse_encode_String(self.name, serializer);
+    sse_encode_u_64(self.hands, serializer);
+  }
+
+  @protected
   void sse_encode_bool(bool self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     serializer.buffer.putUint8(self ? 1 : 0);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_f_64(double self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_f_64(self, serializer);
   }
 
   @protected
@@ -1026,6 +1576,24 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_box_autoadd_player_analytics_request(
+    PlayerAnalyticsRequest self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_player_analytics_request(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_player_statistics(
+    PlayerStatistics self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_player_statistics(self, serializer);
+  }
+
+  @protected
   void sse_encode_box_autoadd_u_8(int self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_u_8(self, serializer);
@@ -1042,6 +1610,31 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_String(self.coreVersion, serializer);
     sse_encode_u_32(self.schemaVersion, serializer);
+  }
+
+  @protected
+  void sse_encode_currency_results(
+    CurrencyResults self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.currency, serializer);
+    sse_encode_u_8(self.currencyScale, serializer);
+    sse_encode_i_64(self.net, serializer);
+    sse_encode_i_64(self.netAtShowdown, serializer);
+    sse_encode_i_64(self.netWithoutShowdown, serializer);
+  }
+
+  @protected
+  void sse_encode_export_summary(ExportSummary self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_u_32(self.handCount, serializer);
+  }
+
+  @protected
+  void sse_encode_f_64(double self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putFloat64(self);
   }
 
   @protected
@@ -1153,6 +1746,30 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_list_analytics_player(
+    List<AnalyticsPlayer> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_analytics_player(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_currency_results(
+    List<CurrencyResults> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_currency_results(item, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_list_hand_list_item(
     List<HandListItem> self,
     SseSerializer serializer,
@@ -1187,12 +1804,46 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_list_result_point(
+    List<ResultPoint> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_result_point(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_statistic_value(
+    List<StatisticValue> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_statistic_value(item, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_opt_String(String? self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
 
     sse_encode_bool(self != null, serializer);
     if (self != null) {
       sse_encode_String(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_f_64(double? self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_f_64(self, serializer);
     }
   }
 
@@ -1223,6 +1874,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_opt_box_autoadd_player_statistics(
+    PlayerStatistics? self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_player_statistics(self, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_opt_box_autoadd_u_8(int? self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
 
@@ -1233,9 +1897,90 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_player_analytics(
+    PlayerAnalytics self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_list_analytics_player(self.players, serializer);
+    sse_encode_u_32(self.totalPlayers, serializer);
+    sse_encode_opt_box_autoadd_player_statistics(self.selected, serializer);
+    sse_encode_opt_String(self.graphCurrency, serializer);
+    sse_encode_u_8(self.graphCurrencyScale, serializer);
+    sse_encode_list_result_point(self.points, serializer);
+  }
+
+  @protected
+  void sse_encode_player_analytics_request(
+    PlayerAnalyticsRequest self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.room, serializer);
+    sse_encode_String(self.player, serializer);
+    sse_encode_String(self.currency, serializer);
+    sse_encode_opt_String(self.dateFrom, serializer);
+    sse_encode_opt_String(self.dateTo, serializer);
+    sse_encode_opt_box_autoadd_i_64(self.minBigBlind, serializer);
+    sse_encode_opt_box_autoadd_i_64(self.maxBigBlind, serializer);
+  }
+
+  @protected
+  void sse_encode_player_statistics(
+    PlayerStatistics self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.room, serializer);
+    sse_encode_String(self.name, serializer);
+    sse_encode_u_64(self.hands, serializer);
+    sse_encode_u_64(self.handsCounted, serializer);
+    sse_encode_f_64(self.netBigBlinds, serializer);
+    sse_encode_opt_box_autoadd_f_64(self.bbPer100, serializer);
+    sse_encode_opt_box_autoadd_f_64(self.aggressionFactor, serializer);
+    sse_encode_opt_box_autoadd_f_64(self.aggressionFrequency, serializer);
+    sse_encode_list_currency_results(self.results, serializer);
+    sse_encode_list_statistic_value(self.stats, serializer);
+  }
+
+  @protected
+  void sse_encode_result_point(ResultPoint self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_u_32(self.sequence, serializer);
+    sse_encode_String(self.playedAt, serializer);
+    sse_encode_String(self.externalHandId, serializer);
+    sse_encode_i_64(self.net, serializer);
+    sse_encode_i_64(self.cumulativeNet, serializer);
+    sse_encode_f_64(self.cumulativeBigBlinds, serializer);
+  }
+
+  @protected
+  void sse_encode_statistic_value(
+    StatisticValue self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.key, serializer);
+    sse_encode_String(self.label, serializer);
+    sse_encode_String(self.description, serializer);
+    sse_encode_u_64(self.successes, serializer);
+    sse_encode_u_64(self.eligible, serializer);
+    sse_encode_opt_box_autoadd_f_64(self.rate, serializer);
+    sse_encode_opt_box_autoadd_f_64(self.intervalLow, serializer);
+    sse_encode_opt_box_autoadd_f_64(self.intervalHigh, serializer);
+    sse_encode_u_32(self.minimumMeaningfulSample, serializer);
+  }
+
+  @protected
   void sse_encode_u_32(int self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     serializer.buffer.putUint32(self);
+  }
+
+  @protected
+  void sse_encode_u_64(BigInt self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    serializer.buffer.putBigUint64(self);
   }
 
   @protected
