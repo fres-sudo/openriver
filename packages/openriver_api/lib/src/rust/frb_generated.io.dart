@@ -30,7 +30,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   String dco_decode_String(dynamic raw);
 
   @protected
+  AnalyticsPlayer dco_decode_analytics_player(dynamic raw);
+
+  @protected
   bool dco_decode_bool(dynamic raw);
+
+  @protected
+  double dco_decode_box_autoadd_f_64(dynamic raw);
 
   @protected
   HandQueryRequest dco_decode_box_autoadd_hand_query_request(dynamic raw);
@@ -42,6 +48,14 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   ImportSummary dco_decode_box_autoadd_import_summary(dynamic raw);
 
   @protected
+  PlayerAnalyticsRequest dco_decode_box_autoadd_player_analytics_request(
+    dynamic raw,
+  );
+
+  @protected
+  PlayerStatistics dco_decode_box_autoadd_player_statistics(dynamic raw);
+
+  @protected
   int dco_decode_box_autoadd_u_8(dynamic raw);
 
   @protected
@@ -49,6 +63,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   CoreStatus dco_decode_core_status(dynamic raw);
+
+  @protected
+  CurrencyResults dco_decode_currency_results(dynamic raw);
+
+  @protected
+  ExportSummary dco_decode_export_summary(dynamic raw);
+
+  @protected
+  double dco_decode_f_64(dynamic raw);
 
   @protected
   HandListItem dco_decode_hand_list_item(dynamic raw);
@@ -81,6 +104,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   ImportSummary dco_decode_import_summary(dynamic raw);
 
   @protected
+  List<AnalyticsPlayer> dco_decode_list_analytics_player(dynamic raw);
+
+  @protected
+  List<CurrencyResults> dco_decode_list_currency_results(dynamic raw);
+
+  @protected
   List<HandListItem> dco_decode_list_hand_list_item(dynamic raw);
 
   @protected
@@ -90,7 +119,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
 
   @protected
+  List<ResultPoint> dco_decode_list_result_point(dynamic raw);
+
+  @protected
+  List<StatisticValue> dco_decode_list_statistic_value(dynamic raw);
+
+  @protected
   String? dco_decode_opt_String(dynamic raw);
+
+  @protected
+  double? dco_decode_opt_box_autoadd_f_64(dynamic raw);
 
   @protected
   PlatformInt64? dco_decode_opt_box_autoadd_i_64(dynamic raw);
@@ -99,10 +137,31 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   ImportSummary? dco_decode_opt_box_autoadd_import_summary(dynamic raw);
 
   @protected
+  PlayerStatistics? dco_decode_opt_box_autoadd_player_statistics(dynamic raw);
+
+  @protected
   int? dco_decode_opt_box_autoadd_u_8(dynamic raw);
 
   @protected
+  PlayerAnalytics dco_decode_player_analytics(dynamic raw);
+
+  @protected
+  PlayerAnalyticsRequest dco_decode_player_analytics_request(dynamic raw);
+
+  @protected
+  PlayerStatistics dco_decode_player_statistics(dynamic raw);
+
+  @protected
+  ResultPoint dco_decode_result_point(dynamic raw);
+
+  @protected
+  StatisticValue dco_decode_statistic_value(dynamic raw);
+
+  @protected
   int dco_decode_u_32(dynamic raw);
+
+  @protected
+  BigInt dco_decode_u_64(dynamic raw);
 
   @protected
   int dco_decode_u_8(dynamic raw);
@@ -122,7 +181,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   String sse_decode_String(SseDeserializer deserializer);
 
   @protected
+  AnalyticsPlayer sse_decode_analytics_player(SseDeserializer deserializer);
+
+  @protected
   bool sse_decode_bool(SseDeserializer deserializer);
+
+  @protected
+  double sse_decode_box_autoadd_f_64(SseDeserializer deserializer);
 
   @protected
   HandQueryRequest sse_decode_box_autoadd_hand_query_request(
@@ -138,6 +203,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  PlayerAnalyticsRequest sse_decode_box_autoadd_player_analytics_request(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  PlayerStatistics sse_decode_box_autoadd_player_statistics(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   int sse_decode_box_autoadd_u_8(SseDeserializer deserializer);
 
   @protected
@@ -145,6 +220,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   CoreStatus sse_decode_core_status(SseDeserializer deserializer);
+
+  @protected
+  CurrencyResults sse_decode_currency_results(SseDeserializer deserializer);
+
+  @protected
+  ExportSummary sse_decode_export_summary(SseDeserializer deserializer);
+
+  @protected
+  double sse_decode_f_64(SseDeserializer deserializer);
 
   @protected
   HandListItem sse_decode_hand_list_item(SseDeserializer deserializer);
@@ -177,6 +261,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   ImportSummary sse_decode_import_summary(SseDeserializer deserializer);
 
   @protected
+  List<AnalyticsPlayer> sse_decode_list_analytics_player(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  List<CurrencyResults> sse_decode_list_currency_results(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   List<HandListItem> sse_decode_list_hand_list_item(
     SseDeserializer deserializer,
   );
@@ -190,7 +284,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
 
   @protected
+  List<ResultPoint> sse_decode_list_result_point(SseDeserializer deserializer);
+
+  @protected
+  List<StatisticValue> sse_decode_list_statistic_value(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   String? sse_decode_opt_String(SseDeserializer deserializer);
+
+  @protected
+  double? sse_decode_opt_box_autoadd_f_64(SseDeserializer deserializer);
 
   @protected
   PlatformInt64? sse_decode_opt_box_autoadd_i_64(SseDeserializer deserializer);
@@ -201,10 +306,35 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  PlayerStatistics? sse_decode_opt_box_autoadd_player_statistics(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   int? sse_decode_opt_box_autoadd_u_8(SseDeserializer deserializer);
 
   @protected
+  PlayerAnalytics sse_decode_player_analytics(SseDeserializer deserializer);
+
+  @protected
+  PlayerAnalyticsRequest sse_decode_player_analytics_request(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  PlayerStatistics sse_decode_player_statistics(SseDeserializer deserializer);
+
+  @protected
+  ResultPoint sse_decode_result_point(SseDeserializer deserializer);
+
+  @protected
+  StatisticValue sse_decode_statistic_value(SseDeserializer deserializer);
+
+  @protected
   int sse_decode_u_32(SseDeserializer deserializer);
+
+  @protected
+  BigInt sse_decode_u_64(SseDeserializer deserializer);
 
   @protected
   int sse_decode_u_8(SseDeserializer deserializer);
@@ -228,7 +358,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_String(String self, SseSerializer serializer);
 
   @protected
+  void sse_encode_analytics_player(
+    AnalyticsPlayer self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_bool(bool self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_box_autoadd_f_64(double self, SseSerializer serializer);
 
   @protected
   void sse_encode_box_autoadd_hand_query_request(
@@ -249,6 +388,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_player_analytics_request(
+    PlayerAnalyticsRequest self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_player_statistics(
+    PlayerStatistics self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_box_autoadd_u_8(int self, SseSerializer serializer);
 
   @protected
@@ -256,6 +407,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_core_status(CoreStatus self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_currency_results(
+    CurrencyResults self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_export_summary(ExportSummary self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_f_64(double self, SseSerializer serializer);
 
   @protected
   void sse_encode_hand_list_item(HandListItem self, SseSerializer serializer);
@@ -300,6 +463,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_import_summary(ImportSummary self, SseSerializer serializer);
 
   @protected
+  void sse_encode_list_analytics_player(
+    List<AnalyticsPlayer> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_currency_results(
+    List<CurrencyResults> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_list_hand_list_item(
     List<HandListItem> self,
     SseSerializer serializer,
@@ -318,7 +493,22 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_list_result_point(
+    List<ResultPoint> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_statistic_value(
+    List<StatisticValue> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_opt_String(String? self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_opt_box_autoadd_f_64(double? self, SseSerializer serializer);
 
   @protected
   void sse_encode_opt_box_autoadd_i_64(
@@ -333,10 +523,46 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_opt_box_autoadd_player_statistics(
+    PlayerStatistics? self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_opt_box_autoadd_u_8(int? self, SseSerializer serializer);
 
   @protected
+  void sse_encode_player_analytics(
+    PlayerAnalytics self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_player_analytics_request(
+    PlayerAnalyticsRequest self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_player_statistics(
+    PlayerStatistics self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_result_point(ResultPoint self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_statistic_value(
+    StatisticValue self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_u_32(int self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_u_64(BigInt self, SseSerializer serializer);
 
   @protected
   void sse_encode_u_8(int self, SseSerializer serializer);
