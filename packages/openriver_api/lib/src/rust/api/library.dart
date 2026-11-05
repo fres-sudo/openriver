@@ -6,6 +6,7 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+// These functions are ignored because they are not marked as `pub`: `analytics_filter`, `analytics_query`, `sampled_points`, `statistics`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `fmt`, `fmt`, `from`, `from`
 
 Future<HandSearchResult> searchHands({
@@ -35,6 +36,25 @@ Future<String> handReplay({
   handId: handId,
 );
 
+/// Aggregates validated stored hands in Rust. Players are bounded and graph
+/// points are evenly sampled while retaining the first and final results.
+Future<PlayerAnalytics> playerAnalytics({
+  required String databasePath,
+  required PlayerAnalyticsRequest request,
+}) => RustLib.instance.api.crateApiLibraryPlayerAnalytics(
+  databasePath: databasePath,
+  request: request,
+);
+
+/// Creates a consistent SQLite backup without copying the live WAL files.
+Future<ExportSummary> exportLibrary({
+  required String databasePath,
+  required String destinationPath,
+}) => RustLib.instance.api.crateApiLibraryExportLibrary(
+  databasePath: databasePath,
+  destinationPath: destinationPath,
+);
+
 /// Asks the running import to stop; its uncommitted batch is discarded.
 void cancelImport() => RustLib.instance.api.crateApiLibraryCancelImport();
 
@@ -59,6 +79,30 @@ Future<CoreStatus> initializeLibrary({required String databasePath}) => RustLib
     .api
     .crateApiLibraryInitializeLibrary(databasePath: databasePath);
 
+class AnalyticsPlayer {
+  final String room;
+  final String name;
+  final BigInt hands;
+
+  const AnalyticsPlayer({
+    required this.room,
+    required this.name,
+    required this.hands,
+  });
+
+  @override
+  int get hashCode => room.hashCode ^ name.hashCode ^ hands.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AnalyticsPlayer &&
+          runtimeType == other.runtimeType &&
+          room == other.room &&
+          name == other.name &&
+          hands == other.hands;
+}
+
 enum CoreError {
   databaseUnavailable,
   migrationFailed,
@@ -67,6 +111,9 @@ enum CoreError {
   invalidSource,
   unsupportedFormat,
   cancelled,
+  exportDestinationExists,
+  invalidExportPath,
+  exportFailed,
 }
 
 class CoreStatus {
@@ -85,6 +132,57 @@ class CoreStatus {
           runtimeType == other.runtimeType &&
           coreVersion == other.coreVersion &&
           schemaVersion == other.schemaVersion;
+}
+
+class CurrencyResults {
+  final String currency;
+  final int currencyScale;
+  final PlatformInt64 net;
+  final PlatformInt64 netAtShowdown;
+  final PlatformInt64 netWithoutShowdown;
+
+  const CurrencyResults({
+    required this.currency,
+    required this.currencyScale,
+    required this.net,
+    required this.netAtShowdown,
+    required this.netWithoutShowdown,
+  });
+
+  @override
+  int get hashCode =>
+      currency.hashCode ^
+      currencyScale.hashCode ^
+      net.hashCode ^
+      netAtShowdown.hashCode ^
+      netWithoutShowdown.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CurrencyResults &&
+          runtimeType == other.runtimeType &&
+          currency == other.currency &&
+          currencyScale == other.currencyScale &&
+          net == other.net &&
+          netAtShowdown == other.netAtShowdown &&
+          netWithoutShowdown == other.netWithoutShowdown;
+}
+
+class ExportSummary {
+  final int handCount;
+
+  const ExportSummary({required this.handCount});
+
+  @override
+  int get hashCode => handCount.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ExportSummary &&
+          runtimeType == other.runtimeType &&
+          handCount == other.handCount;
 }
 
 class HandListItem {
@@ -352,4 +450,231 @@ class ImportSummary {
           parserVersion == other.parserVersion &&
           diagnostics == other.diagnostics &&
           storedHandCount == other.storedHandCount;
+}
+
+class PlayerAnalytics {
+  final List<AnalyticsPlayer> players;
+  final int totalPlayers;
+  final PlayerStatistics? selected;
+  final String? graphCurrency;
+  final int graphCurrencyScale;
+  final List<ResultPoint> points;
+
+  const PlayerAnalytics({
+    required this.players,
+    required this.totalPlayers,
+    this.selected,
+    this.graphCurrency,
+    required this.graphCurrencyScale,
+    required this.points,
+  });
+
+  @override
+  int get hashCode =>
+      players.hashCode ^
+      totalPlayers.hashCode ^
+      selected.hashCode ^
+      graphCurrency.hashCode ^
+      graphCurrencyScale.hashCode ^
+      points.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PlayerAnalytics &&
+          runtimeType == other.runtimeType &&
+          players == other.players &&
+          totalPlayers == other.totalPlayers &&
+          selected == other.selected &&
+          graphCurrency == other.graphCurrency &&
+          graphCurrencyScale == other.graphCurrencyScale &&
+          points == other.points;
+}
+
+class PlayerAnalyticsRequest {
+  final String room;
+  final String player;
+  final String currency;
+  final String? dateFrom;
+  final String? dateTo;
+  final PlatformInt64? minBigBlind;
+  final PlatformInt64? maxBigBlind;
+
+  const PlayerAnalyticsRequest({
+    required this.room,
+    required this.player,
+    required this.currency,
+    this.dateFrom,
+    this.dateTo,
+    this.minBigBlind,
+    this.maxBigBlind,
+  });
+
+  @override
+  int get hashCode =>
+      room.hashCode ^
+      player.hashCode ^
+      currency.hashCode ^
+      dateFrom.hashCode ^
+      dateTo.hashCode ^
+      minBigBlind.hashCode ^
+      maxBigBlind.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PlayerAnalyticsRequest &&
+          runtimeType == other.runtimeType &&
+          room == other.room &&
+          player == other.player &&
+          currency == other.currency &&
+          dateFrom == other.dateFrom &&
+          dateTo == other.dateTo &&
+          minBigBlind == other.minBigBlind &&
+          maxBigBlind == other.maxBigBlind;
+}
+
+class PlayerStatistics {
+  final String room;
+  final String name;
+  final BigInt hands;
+  final BigInt handsCounted;
+  final double netBigBlinds;
+  final double? bbPer100;
+  final double? aggressionFactor;
+  final double? aggressionFrequency;
+  final List<CurrencyResults> results;
+  final List<StatisticValue> stats;
+
+  const PlayerStatistics({
+    required this.room,
+    required this.name,
+    required this.hands,
+    required this.handsCounted,
+    required this.netBigBlinds,
+    this.bbPer100,
+    this.aggressionFactor,
+    this.aggressionFrequency,
+    required this.results,
+    required this.stats,
+  });
+
+  @override
+  int get hashCode =>
+      room.hashCode ^
+      name.hashCode ^
+      hands.hashCode ^
+      handsCounted.hashCode ^
+      netBigBlinds.hashCode ^
+      bbPer100.hashCode ^
+      aggressionFactor.hashCode ^
+      aggressionFrequency.hashCode ^
+      results.hashCode ^
+      stats.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is PlayerStatistics &&
+          runtimeType == other.runtimeType &&
+          room == other.room &&
+          name == other.name &&
+          hands == other.hands &&
+          handsCounted == other.handsCounted &&
+          netBigBlinds == other.netBigBlinds &&
+          bbPer100 == other.bbPer100 &&
+          aggressionFactor == other.aggressionFactor &&
+          aggressionFrequency == other.aggressionFrequency &&
+          results == other.results &&
+          stats == other.stats;
+}
+
+class ResultPoint {
+  final int sequence;
+  final String playedAt;
+  final String externalHandId;
+  final PlatformInt64 net;
+  final PlatformInt64 cumulativeNet;
+  final double cumulativeBigBlinds;
+
+  const ResultPoint({
+    required this.sequence,
+    required this.playedAt,
+    required this.externalHandId,
+    required this.net,
+    required this.cumulativeNet,
+    required this.cumulativeBigBlinds,
+  });
+
+  @override
+  int get hashCode =>
+      sequence.hashCode ^
+      playedAt.hashCode ^
+      externalHandId.hashCode ^
+      net.hashCode ^
+      cumulativeNet.hashCode ^
+      cumulativeBigBlinds.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ResultPoint &&
+          runtimeType == other.runtimeType &&
+          sequence == other.sequence &&
+          playedAt == other.playedAt &&
+          externalHandId == other.externalHandId &&
+          net == other.net &&
+          cumulativeNet == other.cumulativeNet &&
+          cumulativeBigBlinds == other.cumulativeBigBlinds;
+}
+
+class StatisticValue {
+  final String key;
+  final String label;
+  final String description;
+  final BigInt successes;
+  final BigInt eligible;
+  final double? rate;
+  final double? intervalLow;
+  final double? intervalHigh;
+  final int minimumMeaningfulSample;
+
+  const StatisticValue({
+    required this.key,
+    required this.label,
+    required this.description,
+    required this.successes,
+    required this.eligible,
+    this.rate,
+    this.intervalLow,
+    this.intervalHigh,
+    required this.minimumMeaningfulSample,
+  });
+
+  @override
+  int get hashCode =>
+      key.hashCode ^
+      label.hashCode ^
+      description.hashCode ^
+      successes.hashCode ^
+      eligible.hashCode ^
+      rate.hashCode ^
+      intervalLow.hashCode ^
+      intervalHigh.hashCode ^
+      minimumMeaningfulSample.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is StatisticValue &&
+          runtimeType == other.runtimeType &&
+          key == other.key &&
+          label == other.label &&
+          description == other.description &&
+          successes == other.successes &&
+          eligible == other.eligible &&
+          rate == other.rate &&
+          intervalLow == other.intervalLow &&
+          intervalHigh == other.intervalHigh &&
+          minimumMeaningfulSample == other.minimumMeaningfulSample;
 }
