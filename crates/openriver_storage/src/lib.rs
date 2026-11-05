@@ -30,6 +30,12 @@ pub enum StorageError {
     Cancelled,
     #[error("the stored hand is invalid")]
     InvalidStoredHand,
+    #[error("the export destination already exists")]
+    ExportDestinationExists,
+    #[error("the export destination is invalid")]
+    InvalidExportPath,
+    #[error("could not export the local database")]
+    Export(#[source] sqlx::Error),
 }
 
 pub struct Library {
@@ -164,6 +170,86 @@ impl Library {
         Ok(sqlx::query_scalar("SELECT COUNT(*) FROM imported_hands")
             .fetch_one(&self.pool)
             .await?)
+    }
+
+    /// Writes a transactionally consistent standalone database, including all
+    /// committed data and migrations. SQLite refuses to overwrite a file.
+    pub async fn export_snapshot(&self, destination: &Path) -> Result<i64, StorageError> {
+        if destination.exists() {
+            return Err(StorageError::ExportDestinationExists);
+        }
+        let destination = destination
+            .to_str()
+            .ok_or(StorageError::InvalidExportPath)?;
+        sqlx::query("VACUUM INTO ?")
+            .bind(destination)
+            .execute(&self.pool)
+            .await
+            .map_err(StorageError::Export)?;
+        self.hand_count().await
+    }
+
+    /// Oldest first, in bounded batches. Analytics never crosses the bridge as
+    /// raw hands; only its bounded aggregate and sampled graph do.
+    pub async fn analytics_batch(
+        &self,
+        query: &AnalyticsQuery,
+        cursor: Option<(&str, i64)>,
+        limit: i64,
+    ) -> Result<Vec<AnalyticsHand>, StorageError> {
+        let (played_at, id) = cursor.unwrap_or(("", 0));
+        let mut rows = QueryBuilder::<Sqlite>::new(
+            "SELECT h.id, h.played_at, h.canonical_json FROM imported_hands h WHERE (",
+        );
+        rows.push_bind(played_at);
+        rows.push(" = '' OR h.played_at > ");
+        rows.push_bind(played_at);
+        rows.push(" OR (h.played_at = ");
+        rows.push_bind(played_at);
+        rows.push(" AND h.id > ");
+        rows.push_bind(id);
+        rows.push("))");
+        if let Some(room) = &query.room {
+            rows.push(" AND h.room = ");
+            rows.push_bind(room.clone());
+        }
+        if let Some(currency) = &query.currency {
+            rows.push(" AND h.currency = ");
+            rows.push_bind(currency.clone());
+        }
+        if let Some(date) = &query.date_from {
+            rows.push(" AND h.played_at >= ");
+            rows.push_bind(format!("{date}T00:00:00Z"));
+        }
+        if let Some(date) = &query.date_to {
+            rows.push(" AND h.played_at <= ");
+            rows.push_bind(format!("{date}T23:59:59Z"));
+        }
+        if let Some(min) = query.min_big_blind {
+            rows.push(" AND h.big_blind_units >= ");
+            rows.push_bind(min);
+        }
+        if let Some(max) = query.max_big_blind {
+            rows.push(" AND h.big_blind_units <= ");
+            rows.push_bind(max);
+        }
+        rows.push(" ORDER BY h.played_at ASC, h.id ASC LIMIT ");
+        rows.push_bind(limit.clamp(1, 500));
+        let rows = rows
+            .build_query_as::<(i64, String, String)>()
+            .fetch_all(&self.pool)
+            .await?;
+        rows.into_iter()
+            .map(|(id, played_at, json)| {
+                let hand =
+                    serde_json::from_str(&json).map_err(|_| StorageError::InvalidStoredHand)?;
+                Ok(AnalyticsHand {
+                    id,
+                    played_at,
+                    hand,
+                })
+            })
+            .collect()
     }
 
     /// Newest first, with the row id breaking equal-timestamp ties. The
@@ -334,6 +420,22 @@ pub struct HandSearchPage {
     pub total: i64,
     pub page: u32,
     pub page_size: u32,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct AnalyticsQuery {
+    pub room: Option<String>,
+    pub currency: Option<String>,
+    pub date_from: Option<String>,
+    pub date_to: Option<String>,
+    pub min_big_blind: Option<i64>,
+    pub max_big_blind: Option<i64>,
+}
+
+pub struct AnalyticsHand {
+    pub id: i64,
+    pub played_at: String,
+    pub hand: Hand,
 }
 
 fn append_hand_filters(builder: &mut QueryBuilder<'_, Sqlite>, query: &HandQuery) {
@@ -700,6 +802,77 @@ mod tests {
         assert_eq!(result.hands[0].big_blind, 2);
         assert_eq!(result.hands[0].player_count, 2);
         assert_eq!(result.hands[0].total_pot, 4);
+    }
+
+    #[tokio::test]
+    async fn analytics_batches_are_filtered_ordered_and_bounded() {
+        let dir = tempfile::tempdir().unwrap();
+        let library = Library::open(&dir.path().join("library.sqlite3"))
+            .await
+            .unwrap();
+        let template = include_str!("../../../fixtures/hands/normal_fold.txt");
+        let source = (0..5)
+            .map(|i| {
+                template
+                    .replace("Hand #1002", &format!("Hand #{}", 8000 + i))
+                    .replace(
+                        "2026/10/23 12:01:00",
+                        &format!("2026/10/2{} 12:01:00", 7 - i),
+                    )
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+        let parsed = openriver_parser::parse(source.as_bytes()).unwrap();
+        library.import(&parsed, "analytics").await.unwrap();
+        let query = AnalyticsQuery {
+            currency: Some("USD".into()),
+            date_from: Some("2026-10-24".into()),
+            date_to: Some("2026-10-26".into()),
+            min_big_blind: Some(2),
+            max_big_blind: Some(2),
+            ..AnalyticsQuery::default()
+        };
+        let first = library.analytics_batch(&query, None, 2).await.unwrap();
+        assert_eq!(first.len(), 2);
+        let cursor = first.last().map(|row| (row.played_at.as_str(), row.id));
+        let second = library.analytics_batch(&query, cursor, 2).await.unwrap();
+        assert_eq!(second.len(), 1);
+        let ids: Vec<_> = first
+            .iter()
+            .chain(&second)
+            .map(|row| row.hand.provenance.external_hand_id.as_str())
+            .collect();
+        assert_eq!(ids, ["8003", "8002", "8001"]);
+    }
+
+    #[tokio::test]
+    async fn export_is_consistent_standalone_and_never_overwrites() {
+        let dir = tempfile::tempdir().unwrap();
+        let source_path = dir.path().join("library.sqlite3");
+        let backup_path = dir.path().join("backup.sqlite3");
+        let library = Library::open(&source_path).await.unwrap();
+        let parsed =
+            openriver_parser::parse(include_bytes!("../../../fixtures/hands/normal_fold.txt"))
+                .unwrap();
+        library.import(&parsed, "before-backup").await.unwrap();
+        assert_eq!(library.export_snapshot(&backup_path).await.unwrap(), 1);
+        assert!(matches!(
+            library.export_snapshot(&backup_path).await,
+            Err(StorageError::ExportDestinationExists)
+        ));
+        let later = openriver_parser::parse(include_bytes!(
+            "../../../fixtures/hands/golden_side_pot.txt"
+        ))
+        .unwrap();
+        library.import(&later, "after-backup").await.unwrap();
+        assert_eq!(library.hand_count().await.unwrap(), 2);
+        library.close().await;
+
+        let backup = Library::open(&backup_path).await.unwrap();
+        assert_eq!(backup.hand_count().await.unwrap(), 1);
+        let hands = backup.list_hands(10, None).await.unwrap();
+        assert_eq!(hands[0].external_hand_id, "1002");
+        backup.close().await;
     }
 
     #[tokio::test]
