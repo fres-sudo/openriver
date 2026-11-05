@@ -112,6 +112,12 @@ abstract class AppLocalizations {
   /// **'Hands'**
   String get navHands;
 
+  /// No description provided for @navStatistics.
+  ///
+  /// In en, this message translates to:
+  /// **'Statistics'**
+  String get navStatistics;
+
   /// No description provided for @navSettings.
   ///
   /// In en, this message translates to:
@@ -177,6 +183,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Import a hand history file exported after your session to start your library.'**
   String get libraryEmptyDescription;
+
+  /// No description provided for @onboardingExport.
+  ///
+  /// In en, this message translates to:
+  /// **'In your poker room, request or save your own hand history after a session.'**
+  String get onboardingExport;
+
+  /// No description provided for @onboardingImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the text file here. Valid hands are stored locally; rejected hands include a reason.'**
+  String get onboardingImport;
+
+  /// No description provided for @onboardingReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Statistics for results and tendencies, or Hands to search and replay each hand.'**
+  String get onboardingReview;
+
+  /// No description provided for @onboardingFormats.
+  ///
+  /// In en, this message translates to:
+  /// **'Supported input: PokerStars-style NLHE cash histories in English (USD) or Italian (EUR). Tournament hands are not imported.'**
+  String get onboardingFormats;
 
   /// No description provided for @lastImport.
   ///
@@ -249,6 +279,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Hand {handId}, lines {startLine}–{endLine}: {code}'**
   String rejectedHand(String handId, int startLine, int endLine, String code);
+
+  /// No description provided for @diagnosticUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This hand uses an unsupported game or format.'**
+  String get diagnosticUnsupported;
+
+  /// No description provided for @diagnosticIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'The hand is incomplete, so it was not stored.'**
+  String get diagnosticIncomplete;
+
+  /// No description provided for @diagnosticMalformed.
+  ///
+  /// In en, this message translates to:
+  /// **'A required field could not be read with confidence.'**
+  String get diagnosticMalformed;
+
+  /// No description provided for @diagnosticInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'The hand’s actions, cards, or payouts are inconsistent.'**
+  String get diagnosticInvalid;
+
+  /// No description provided for @diagnosticDuplicate.
+  ///
+  /// In en, this message translates to:
+  /// **'The same hand ID appears more than once in this file.'**
+  String get diagnosticDuplicate;
 
   /// No description provided for @unknownHand.
   ///
@@ -550,6 +610,174 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 hand is stored.} other{{count} hands are stored.}} A searchable list arrives in a later version.'**
   String handsComingDescription(int count);
 
+  /// No description provided for @statisticsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Statistics'**
+  String get statisticsTitle;
+
+  /// No description provided for @statisticsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Results and tendencies calculated from your imported hands.'**
+  String get statisticsDescription;
+
+  /// No description provided for @statisticsLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Calculating statistics…'**
+  String get statisticsLoading;
+
+  /// No description provided for @statisticsLoadFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Statistics could not be calculated'**
+  String get statisticsLoadFailedTitle;
+
+  /// No description provided for @statisticsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Your hands are still stored. Try calculating the report again.'**
+  String get statisticsLoadFailed;
+
+  /// No description provided for @statisticsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Import hands to see results, a winnings graph, and core statistics.'**
+  String get statisticsEmpty;
+
+  /// No description provided for @statisticsRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get statisticsRefresh;
+
+  /// No description provided for @statisticsPlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Player and room'**
+  String get statisticsPlayer;
+
+  /// No description provided for @statisticsHands.
+  ///
+  /// In en, this message translates to:
+  /// **'Hands'**
+  String get statisticsHands;
+
+  /// No description provided for @statisticsBb100.
+  ///
+  /// In en, this message translates to:
+  /// **'BB / 100 hands'**
+  String get statisticsBb100;
+
+  /// No description provided for @statisticsAggressionFactor.
+  ///
+  /// In en, this message translates to:
+  /// **'Aggression factor'**
+  String get statisticsAggressionFactor;
+
+  /// No description provided for @statisticsNoEvidence.
+  ///
+  /// In en, this message translates to:
+  /// **'No evidence'**
+  String get statisticsNoEvidence;
+
+  /// No description provided for @statisticsNetResult.
+  ///
+  /// In en, this message translates to:
+  /// **'Net result · {currency}'**
+  String statisticsNetResult(String currency);
+
+  /// No description provided for @statisticsAtShowdown.
+  ///
+  /// In en, this message translates to:
+  /// **'At showdown'**
+  String get statisticsAtShowdown;
+
+  /// No description provided for @statisticsWithoutShowdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Without showdown'**
+  String get statisticsWithoutShowdown;
+
+  /// No description provided for @statisticsSample.
+  ///
+  /// In en, this message translates to:
+  /// **'{successes} / {eligible} opportunities'**
+  String statisticsSample(int successes, int eligible);
+
+  /// No description provided for @statisticsResultsGraph.
+  ///
+  /// In en, this message translates to:
+  /// **'Cumulative results'**
+  String get statisticsResultsGraph;
+
+  /// No description provided for @statisticsGraphDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Chronological results for the selected player and filters. Large reports are sampled to 500 points, including the final result.'**
+  String get statisticsGraphDescription;
+
+  /// No description provided for @statisticsShowCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Show {currency}'**
+  String statisticsShowCurrency(String currency);
+
+  /// No description provided for @statisticsShowBigBlinds.
+  ///
+  /// In en, this message translates to:
+  /// **'Show big blinds'**
+  String get statisticsShowBigBlinds;
+
+  /// No description provided for @statisticsNoGraph.
+  ///
+  /// In en, this message translates to:
+  /// **'No result points match these filters.'**
+  String get statisticsNoGraph;
+
+  /// No description provided for @statisticsCurrencyGraphLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cumulative net result in {currency}'**
+  String statisticsCurrencyGraphLabel(String currency);
+
+  /// No description provided for @statisticsBigBlindsGraphLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cumulative net result in big blinds'**
+  String get statisticsBigBlindsGraphLabel;
+
+  /// No description provided for @statisticsFinalCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Final result: {amount}'**
+  String statisticsFinalCurrency(String amount);
+
+  /// No description provided for @statisticsFinalBigBlinds.
+  ///
+  /// In en, this message translates to:
+  /// **'Final result: {amount} BB'**
+  String statisticsFinalBigBlinds(String amount);
+
+  /// No description provided for @statisticsAllHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'All core statistics'**
+  String get statisticsAllHeading;
+
+  /// No description provided for @statisticsSampleExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'Rates show successes over eligible opportunities. A dash means no evidence, not zero percent.'**
+  String get statisticsSampleExplanation;
+
+  /// No description provided for @statisticsSmallSample.
+  ///
+  /// In en, this message translates to:
+  /// **'Small sample'**
+  String get statisticsSmallSample;
+
   /// No description provided for @settingsTitle.
   ///
   /// In en, this message translates to:
@@ -585,6 +813,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your hands stay on this device. OpenRiver needs no account or network connection.'**
   String get privacyNote;
+
+  /// No description provided for @exportHeading.
+  ///
+  /// In en, this message translates to:
+  /// **'Data export'**
+  String get exportHeading;
+
+  /// No description provided for @exportDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Save a consistent SQLite backup of your library, including hands, import reports, and provenance. Keep the file somewhere safe.'**
+  String get exportDescription;
+
+  /// No description provided for @exportAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Export library backup'**
+  String get exportAction;
+
+  /// No description provided for @exportSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup exported with {count, plural, =1{1 hand} other{{count} hands}}.'**
+  String exportSuccess(int count);
+
+  /// No description provided for @exportDestinationExists.
+  ///
+  /// In en, this message translates to:
+  /// **'That file already exists. Choose a new filename so nothing is overwritten.'**
+  String get exportDestinationExists;
+
+  /// No description provided for @exportInvalidPath.
+  ///
+  /// In en, this message translates to:
+  /// **'The backup could not be saved there. Choose a different location.'**
+  String get exportInvalidPath;
+
+  /// No description provided for @exportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The backup could not be completed. Check available storage and try again.'**
+  String get exportFailed;
+
+  /// No description provided for @exportChooserFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The save dialog could not open. Please try again.'**
+  String get exportChooserFailed;
 
   /// No description provided for @replayTitle.
   ///
