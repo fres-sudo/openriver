@@ -85,6 +85,14 @@ void main() {
     expect(replay.steps.last.event, isA<AwardStep>());
     final repeated = await core.importHandHistory(database, history.path);
     expect((repeated.imported, repeated.duplicates), (0, 1));
+    final analytics = await core.playerAnalytics(
+      database,
+      const PlayerAnalyticsQuery(),
+    );
+    expect(analytics.selected?.name, 'Ada');
+    expect(analytics.selected?.results.single.net, 2);
+    expect(analytics.selected?.bbPer100, 100);
+    expect(analytics.points.single.cumulativeBigBlinds, 1);
 
     await tester.pumpWidget(
       OpenRiverApp(core: core, databasePath: () async => database),
