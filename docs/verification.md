@@ -1,5 +1,13 @@
 # Verification
 
+## Milestone 2 statistics and export, 2026-11-05
+
+`dart run melos run check` passed on the working tree with the pre-existing uncommitted Italian parser changes included: formatting, analysis in all three Dart packages, 136 app tests, 489 UI-kit tests, Rust Clippy, and Rust workspace tests (58 analytics, 3 bridge, 5 domain, 26 parser, 11 storage; ignored exhaustive/performance tests excluded). New tests cover filtered analytics batches, exact known stats/results, bounded graph sampling, standalone backups, overwrite refusal, dashboard filters and graph modes, export without path disclosure, navigation, and enlarged-text layouts.
+
+The packaged macOS `flutter test integration_test/core_smoke_test.dart -d macos` passed both integration cases on this working tree. In addition to the existing import/replay checks, it called the real Dart → Rust analytics API, verified Ada's known net result and BB/100, exported a SQLite backup, reopened it and verified its hand count, and confirmed that exporting to the same destination returns `exportDestinationExists`. The native save dialog itself was not automated, and this is not a signed or notarized beta result.
+
+The implementation keeps raw hands inside Rust for analytics and returns at most 100 player rows and 500 sampled graph points. No permitted real-world sample, external tester session, mobile export interaction, Windows/Linux run, or signing/notarization evidence was added.
+
 ## Stored hands browser and replay, 2026-11-04
 
 `fvm dart run melos run check` passed on the working tree: formatting, analysis, Flutter tests, Rust Clippy, and Rust workspace tests. The new Rust tests cover keyset paging across equal timestamps, loading a persisted hand, and the serialized replay snapshot shape. Flutter tests cover paging, opening a stored hand's replay, and decoding replay events. Flutter Rust Bridge bindings were regenerated with the pinned 2.12.0 generator. The packaged macOS integration test now asserts list and replay calls for an imported synthetic hand, but it was not run for this increment, so native Dart → Rust → SQLite replay remains unverified in a packaged app.
